@@ -1,0 +1,2443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REFORGER CONFIG EDITOR</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap');
+  :root {
+    --bg:#0a0c0e;--panel:#0f1317;--panel2:#141920;--border:#1e2830;--border-bright:#2a3a48;
+    --accent:#c8a84b;--accent2:#e8c46a;--danger:#c84b4b;--success:#4bc86e;--warn:#e8a84b;
+    --text:#c8d4dc;--text-dim:#5a6a78;--text-muted:#3a4a58;--highlight:#1a2830;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:9999;}
+
+  /* HEADER */
+  header{background:var(--panel);border-bottom:2px solid var(--accent);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-icon{width:32px;height:32px;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:16px;transform:rotate(45deg);}
+  .logo-icon span{transform:rotate(-45deg);display:block;}
+  .logo-text{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;letter-spacing:4px;color:var(--accent);text-transform:uppercase;}
+  .logo-sub{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-top:2px;}
+  .header-actions{display:flex;gap:8px;align-items:center;}
+  .status-bar{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:1px;padding:4px 12px;border:1px solid var(--border);background:var(--bg);}
+  #status-text{color:var(--accent);}
+
+  /* BUTTONS */
+  .btn{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:8px 20px;border:1.5px solid var(--border-bright);background:transparent;color:var(--text);cursor:pointer;transition:all .15s;outline:none;position:relative;overflow:hidden;}
+  .btn::after{content:'';position:absolute;inset:0;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .15s;z-index:-1;}
+  .btn:hover{color:var(--bg);border-color:var(--accent);}
+  .btn:hover::after{transform:scaleX(1);}
+  .btn-primary{border-color:var(--accent);color:var(--accent);}
+  .btn-danger{border-color:var(--danger);color:var(--danger);}
+  .btn-danger::after{background:var(--danger);}
+  .btn-success{border-color:var(--success);color:var(--success);}
+  .btn-success::after{background:var(--success);}
+  .btn-sm{padding:5px 12px;font-size:11px;}
+
+  /* LAYOUT */
+  .app{display:grid;grid-template-columns:220px 1fr;height:calc(100vh - 56px);}
+
+  /* SIDEBAR */
+  .sidebar{background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:16px 0;}
+  .sidebar-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text-muted);padding:8px 16px 4px;text-transform:uppercase;}
+  .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);border-left:3px solid transparent;transition:all .12s;}
+  .sidebar-item:hover{background:var(--highlight);color:var(--text);}
+  .sidebar-item.active{background:var(--highlight);color:var(--accent);border-left-color:var(--accent);}
+  .sidebar-item .dot{width:6px;height:6px;border:1.5px solid currentColor;border-radius:50%;flex-shrink:0;}
+  .sidebar-divider{height:1px;background:var(--border);margin:8px 0;}
+  .backup-list{padding:0 8px;}
+  .backup-item{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);padding:6px 8px;border:1px solid transparent;cursor:pointer;transition:all .12s;border-radius:2px;margin-bottom:2px;letter-spacing:.5px;}
+  .backup-item:hover{border-color:var(--border-bright);color:var(--text);background:var(--highlight);}
+  .backup-item .bk-name{color:var(--accent);display:block;font-size:9px;}
+  .backup-item .bk-time{display:block;font-size:9px;color:var(--text-muted);}
+
+  /* MAIN */
+  .main{overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px;}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;display:flex;flex-direction:column;gap:20px;}
+
+  /* CARD */
+  .card{background:var(--panel);border:1px solid var(--border);}
+  .card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--panel2);}
+  .card-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:10px;}
+  .card-title::before{content:'';width:3px;height:16px;background:var(--accent);display:block;}
+  .card-body{padding:20px;}
+
+  /* FORMS */
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.full{grid-column:1/-1;}
+  .form-group.half{grid-column:span 1;}
+  label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);display:flex;align-items:center;gap:6px;}
+  input[type=text],input[type=number],input[type=password],select,textarea{background:var(--bg);border:1px solid var(--border-bright);color:var(--text);padding:8px 12px;font-family:'Barlow',sans-serif;font-size:14px;outline:none;transition:border-color .12s;width:100%;border-radius:0;}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);background:var(--highlight);}
+  input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+  .checkbox-row{display:flex;align-items:center;gap:8px;padding:4px 0;}
+  .checkbox-row label{margin:0;font-size:12px;cursor:pointer;letter-spacing:.5px;text-transform:none;font-family:'Barlow',sans-serif;color:var(--text);}
+  select option{background:var(--panel2);}
+  textarea{resize:vertical;min-height:80px;}
+  .sep{height:1px;background:var(--border);margin:16px 0;}
+  .section-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:2px;font-size:13px;color:var(--accent);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .section-title::before{content:'';width:2px;height:14px;background:var(--accent);display:block;}
+
+  /* TOOLTIP */
+  .tt{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:var(--border-bright);border-radius:50%;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);cursor:help;position:relative;flex-shrink:0;}
+  .tt:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--accent);color:var(--text);padding:8px 12px;font-family:'Barlow',sans-serif;font-size:12px;width:260px;white-space:normal;line-height:1.5;z-index:200;letter-spacing:0;text-transform:none;font-weight:400;box-shadow:0 4px 20px rgba(0,0,0,.5);}
+  .tt:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--accent);z-index:201;}
+
+  /* CHIPS */
+  .chip-group{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{padding:6px 14px;border:1.5px solid var(--border-bright);font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .12s;color:var(--text-dim);}
+  .chip.selected{border-color:var(--accent);color:var(--accent);background:rgba(200,168,75,.08);}
+
+  /* MODS */
+  .mods-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;position:sticky;top:0;z-index:50;background:var(--panel);padding:12px 0 8px;margin:-4px 0 8px;}
+  .mods-search{flex:1;min-width:200px;display:flex;align-items:center;}
+  .search-prefix{background:var(--panel2);border:1px solid var(--border-bright);border-right:none;padding:8px 10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .mods-search input{border-left:none;}
+  .mods-count{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);padding:8px 12px;border:1px solid var(--border);background:var(--bg);}
+  .mod-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .mod-table thead tr{background:var(--panel2);border-bottom:2px solid var(--border-bright);}
+  .mod-table th{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);padding:10px 12px;text-align:left;font-weight:normal;}
+  .mod-table tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+  .mod-table tbody tr:hover{background:var(--highlight);}
+  .mod-table td{padding:10px 12px;vertical-align:middle;}
+  .mod-id{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .mod-version{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);}
+  .badge{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:2px 6px;border:1px solid;}
+  .badge-required{border-color:var(--accent);color:var(--accent);}
+  .badge-optional{border-color:var(--text-muted);color:var(--text-muted);}
+  .drag-handle{cursor:grab;color:var(--text-muted);font-size:16px;padding:4px;user-select:none;}
+  .drag-handle:active{cursor:grabbing;}
+  .mod-table tr.dragging{opacity:.4;}
+  .mod-table tr.drag-over{border-top:2px solid var(--accent);}
+  .add-mod-panel{background:var(--highlight);border:1px solid var(--accent);padding:20px;margin-top:16px;display:none;}
+  .add-mod-panel.open{display:block;animation:slideDown .2s ease;}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .add-mod-grid{display:grid;grid-template-columns:2fr 3fr 1fr auto;gap:10px;align-items:end;}
+
+  /* JSON */
+  .json-preview{background:var(--bg);border:1px solid var(--border);padding:16px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.6;color:var(--text);max-height:500px;overflow-y:auto;white-space:pre;tab-size:2;}
+  .json-key{color:#7ec8e3;}.json-str{color:#98d49a;}.json-num{color:#e8a87c;}.json-bool{color:#c792ea;}
+
+  /* VALIDATOR */
+  .val-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+  .val-stat{background:var(--panel2);border:1px solid var(--border);padding:16px 20px;display:flex;flex-direction:column;gap:4px;}
+  .val-stat-num{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:36px;line-height:1;}
+  .val-stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);}
+  .val-stat.errors .val-stat-num{color:var(--danger);}
+  .val-stat.warnings .val-stat-num{color:var(--warn);}
+  .val-stat.ok .val-stat-num{color:var(--success);}
+  .val-result-list{display:flex;flex-direction:column;gap:6px;}
+  .val-item{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border:1px solid var(--border);background:var(--panel2);animation:fadeIn .15s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .val-item.error{border-left:3px solid var(--danger);}
+  .val-item.warning{border-left:3px solid var(--warn);}
+  .val-item.pass{border-left:3px solid var(--success);}
+  .val-icon{font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:bold;flex-shrink:0;margin-top:1px;width:16px;}
+  .val-item.error .val-icon{color:var(--danger);}
+  .val-item.warning .val-icon{color:var(--warn);}
+  .val-item.pass .val-icon{color:var(--success);}
+  .val-text{flex:1;}
+  .val-title{font-weight:600;font-size:13px;margin-bottom:2px;}
+  .val-desc{font-size:12px;color:var(--text-dim);line-height:1.5;}
+  .val-path{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);padding:2px 6px;background:var(--bg);border:1px solid var(--border);white-space:nowrap;flex-shrink:0;align-self:center;}
+  .val-filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  .val-filter{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border:1px solid var(--border-bright);background:transparent;color:var(--text-dim);cursor:pointer;transition:all .12s;}
+  .val-filter.active{border-color:var(--accent);color:var(--accent);background:rgba(200,168,75,.08);}
+  .val-empty{text-align:center;padding:40px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-muted);letter-spacing:2px;}
+
+  /* TOAST */
+  .toast-container{position:fixed;top:70px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:8px;}
+  .toast{background:var(--panel2);border:1px solid var(--border-bright);border-left:3px solid var(--accent);padding:10px 16px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;max-width:300px;animation:toastIn .2s ease;display:flex;align-items:center;gap:8px;}
+  .toast.success{border-left-color:var(--success);}
+  .toast.danger{border-left-color:var(--danger);}
+  @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--panel);border:1px solid var(--border-bright);border-top:3px solid var(--accent);width:500px;max-width:95vw;max-height:80vh;overflow-y:auto;}
+  .modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);}
+  .modal-close{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:20px;line-height:1;padding:0 4px;transition:color .12s;}
+  .modal-close:hover{color:var(--text);}
+  .modal-body{padding:20px;}
+  .modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+
+  /* FILE DROP */
+  .file-drop-zone{border:2px dashed var(--border-bright);padding:32px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text-dim);}
+  .file-drop-zone:hover,.file-drop-zone.dragover{border-color:var(--accent);background:rgba(200,168,75,.04);color:var(--text);}
+  .file-drop-zone .drop-icon{font-size:32px;display:block;margin-bottom:8px;}
+  .file-drop-zone p{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;}
+
+
+  /* ─── SCENARIO BROWSER ─── */
+  .scenario-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .scenario-card{background:var(--panel2);border:1px solid var(--border);padding:16px;cursor:pointer;transition:all .15s;position:relative;}
+  .scenario-card:hover{border-color:var(--accent);background:var(--highlight);}
+  .scenario-card.active-scenario{border-color:var(--success);background:rgba(75,200,110,.06);}
+  .scenario-card.active-scenario::after{content:'ACTIVE';position:absolute;top:10px;right:10px;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--success);border:1px solid var(--success);padding:1px 5px;}
+  .scenario-tag{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:2px 7px;border:1px solid var(--border-bright);color:var(--text-muted);margin:2px 2px 0 0;}
+  .recent-chip{background:var(--panel2);border:1px solid var(--border-bright);padding:8px 14px;cursor:pointer;transition:all .15s;max-width:340px;}
+  .recent-chip:hover{border-color:var(--accent);background:var(--highlight);}
+  .recent-chip-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:1px;color:var(--text);display:block;}
+  .recent-chip-id{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .recent-chip-clear{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);cursor:pointer;padding:4px 8px;border:1px solid var(--border);background:transparent;transition:all .12s;align-self:center;}
+  .recent-chip-clear:hover{border-color:var(--danger);color:var(--danger);}
+  .scenario-tag.coop{border-color:#4bc86e;color:#4bc86e;}
+  .scenario-tag.pvp{border-color:#e84b4b;color:#e84b4b;}
+  .scenario-tag.sandbox{border-color:var(--accent);color:var(--accent);}
+  .scenario-id{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:6px;word-break:break-all;}
+  .scenario-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;letter-spacing:1px;color:var(--text);margin-bottom:4px;}
+  .scenario-desc{font-size:12px;color:var(--text-dim);line-height:1.5;margin:6px 0;}
+
+  /* ─── WORKSHOP ─── */
+  .workshop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .workshop-card{background:var(--panel2);border:1px solid var(--border);padding:14px;transition:border-color .15s;}
+  .workshop-card:hover{border-color:var(--border-bright);}
+  .workshop-card.in-list{border-color:var(--success);background:rgba(75,200,110,.04);}
+  .wk-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:1px;color:var(--text);margin-bottom:4px;}
+  .wk-author{font-size:11px;color:var(--text-muted);margin-bottom:6px;}
+  .wk-desc{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:10px;min-height:36px;}
+  .wk-id{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);}
+  .wk-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+  .wk-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+  .wk-tag{font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 6px;border:1px solid var(--border-bright);color:var(--text-muted);}
+  .workshop-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+  .wk-cat-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+  .wk-cat{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;padding:5px 12px;border:1px solid var(--border-bright);background:transparent;color:var(--text-dim);cursor:pointer;transition:all .12s;}
+  .wk-cat.active{border-color:var(--accent);color:var(--accent);background:rgba(200,168,75,.08);}
+  .wk-loading{text-align:center;padding:40px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;}
+
+  /* ─── AI SEARCH ─── */
+  .ai-result-card{background:var(--panel2);border:1px solid var(--border);padding:14px;transition:border-color .15s;animation:fadeIn .2s ease;}
+  .ai-result-card:hover{border-color:var(--border-bright);}
+  .ai-result-card.in-list{border-color:var(--success);background:rgba(75,200,110,.04);}
+  .ai-thinking{text-align:center;padding:32px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;}
+  .ai-thinking::after{content:'';display:inline-block;width:8px;height:8px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;margin-left:10px;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .url-preview{background:var(--highlight);border:1px solid var(--accent);padding:12px 16px;font-family:'Share Tech Mono',monospace;font-size:11px;display:flex;align-items:center;gap:12px;}
+  .url-preview .mod-id{color:var(--accent);font-size:13px;}
+
+  /* ─── COMPARE ─── */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .compare-panel{background:var(--panel2);border:1px solid var(--border);}
+  .compare-panel-header{padding:12px 16px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);}
+  .compare-drop{border:2px dashed var(--border-bright);margin:16px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text-muted);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;}
+  .compare-drop:hover,.compare-drop.dragover{border-color:var(--accent);color:var(--accent);}
+  .compare-loaded{padding:16px;font-family:'Share Tech Mono',monospace;font-size:11px;}
+  .diff-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .diff-table th{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:8px 12px;background:var(--panel);border-bottom:2px solid var(--border-bright);color:var(--text-dim);text-align:left;}
+  .diff-table td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .diff-table tr:hover td{background:var(--highlight);}
+  .diff-key{font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-size:11px;}
+  .diff-a{color:#7ec8e3;}
+  .diff-b{color:#98d49a;}
+  .diff-same{color:var(--text-muted);}
+  .diff-only-a{background:rgba(126,200,227,.06);}
+  .diff-only-b{background:rgba(152,212,154,.06);}
+  .diff-changed{background:rgba(232,168,75,.05);}
+  .diff-badge{font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 6px;border:1px solid;margin-left:6px;}
+  .diff-badge-changed{border-color:var(--warn);color:var(--warn);}
+  .diff-badge-only{border-color:var(--text-muted);color:var(--text-muted);}
+  .merge-btn-cell button{margin:1px 0;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--border-bright);}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon"><span>R</span></div>
+    <div>
+      <div class="logo-text">REFORGER CFG</div>
+      <div class="logo-sub">SERVER CONFIG EDITOR // v2.0</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="status-bar">STATUS: <span id="status-text">NO FILE LOADED</span></div>
+    <label for="file-input" class="btn btn-sm">LOAD JSON</label>
+    <input type="file" id="file-input" accept=".json" style="display:none">
+    <button class="btn btn-sm btn-success" onclick="saveConfig()">EXPORT JSON</button>
+  </div>
+</header>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-label">Sections</div>
+    <div class="sidebar-item active" onclick="showTab('network',this)"><span class="dot"></span>Network</div>
+    <div class="sidebar-item" onclick="showTab('game',this)"><span class="dot"></span>Game</div>
+    <div class="sidebar-item" onclick="showTab('rcon',this)"><span class="dot"></span>RCON</div>
+    <div class="sidebar-item" onclick="showTab('properties',this)"><span class="dot"></span>Game Properties</div>
+    <div class="sidebar-item" onclick="showTab('mods',this)"><span class="dot"></span>Mods</div>
+    <div class="sidebar-item" onclick="showTab('operating',this)"><span class="dot"></span>Operating</div>
+    <div class="sidebar-item" onclick="showTab('persistence',this)"><span class="dot"></span>Persistence</div>
+    <div class="sidebar-item" onclick="showTab('json',this)"><span class="dot"></span>JSON Preview</div>
+    <div class="sidebar-item" onclick="showTab('validator',this)"><span class="dot"></span>Validator <span id="val-badge" style="display:none;margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 5px;border:1px solid var(--danger);color:var(--danger);"></span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Tools</div>
+    <div class="sidebar-item" onclick="showTab('scenarios',this)"><span class="dot"></span>Scenarios</div>
+    <div class="sidebar-item" onclick="showTab('workshop',this)"><span class="dot"></span>Workshop</div>
+    <div class="sidebar-item" onclick="showTab('compare',this)"><span class="dot"></span>Compare</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-label">Backups</div>
+    <div class="backup-list" id="backup-list"><div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);padding:6px 8px;">No backups yet</div></div>
+    <div class="sidebar-divider"></div>
+    <div style="padding:8px 16px;">
+      <button class="btn btn-sm" style="width:100%" onclick="document.getElementById('load-modal').classList.add('open')">LOAD / PASTE JSON</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- ═══ NETWORK TAB ═══ -->
+    <div class="tab-content active" id="tab-network">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Binding &amp; Public Address</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Bind Address <span class="tt" data-tip="IP address the server socket binds to. Leave empty or use 0.0.0.0 to listen on all interfaces. Only change if restricting to a specific NIC. IPv6 not supported.">?</span></label>
+              <input type="text" id="bindAddress" placeholder="0.0.0.0">
+            </div>
+            <div class="form-group">
+              <label>Bind Port <span class="tt" data-tip="UDP port the server socket binds to. This is the port the server process listens on. Must be forwarded in your router/firewall (UDP).">?</span></label>
+              <input type="number" id="bindPort" placeholder="2401">
+            </div>
+            <div class="form-group">
+              <label>Public Address <span class="tt" data-tip="Your server's public IPv4 address. This is what clients use to connect and what gets registered in the server browser. Must be a real public IP, not 0.0.0.0.">?</span></label>
+              <input type="text" id="publicAddress" placeholder="Your public IP">
+            </div>
+            <div class="form-group">
+              <label>Public Port <span class="tt" data-tip="UDP port registered with the backend/server browser. If server has a public IP, this should match bindPort. If behind NAT, set this to the externally forwarded port.">?</span></label>
+              <input type="number" id="publicPort" placeholder="2401">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Game Host Registration <span style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-muted);margin-left:8px;">(Docker / NAT)</span></div></div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Only needed when running behind NAT or Docker where the container IP differs from the public IP. Leave blank in most cases.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>gameHostBindAddress <span class="tt" data-tip="Override for the game host bind address. Leave empty to use bindAddress. Only set this if you have specific network routing needs.">?</span></label>
+              <input type="text" id="gameHostBindAddress" placeholder="Leave blank (uses bindAddress)">
+            </div>
+            <div class="form-group">
+              <label>gameHostBindPort <span class="tt" data-tip="Override for the game host bind port. Leave empty to use bindPort automatically.">?</span></label>
+              <input type="number" id="gameHostBindPort" placeholder="Leave blank (uses bindPort)">
+            </div>
+            <div class="form-group">
+              <label>gameHostRegisterBindAddress <span class="tt" data-tip="The address used for server registration when behind Docker/NAT. Set to your host machine's public IP so clients can connect properly.">?</span></label>
+              <input type="text" id="gameHostRegisterBindAddress" placeholder="Your host public IP (Docker/NAT only)">
+            </div>
+            <div class="form-group">
+              <label>gameHostRegisterPort <span class="tt" data-tip="The port used for server registration when behind Docker/NAT. Set to the externally mapped port.">?</span></label>
+              <input type="number" id="gameHostRegisterPort" placeholder="Your forwarded port (Docker/NAT only)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">A2S Steam Query</div></div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">A2S is the Steam server query protocol used by server browsers. Must use a different port from the game port.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>A2S Address <span class="tt" data-tip="IP address the A2S query socket binds to. Restricts which interface responds to server browser queries. Leave as your public IP or 0.0.0.0.">?</span></label>
+              <input type="text" id="a2sAddress" placeholder="Your public IP or 0.0.0.0">
+            </div>
+            <div class="form-group">
+              <label>A2S Port <span class="tt" data-tip="UDP port for A2S Steam query protocol. Must differ from bindPort and RCON port. Typically bindPort+1 or a custom port like 17777.">?</span></label>
+              <input type="number" id="a2sPort" placeholder="2402">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ GAME TAB ═══ -->
+    <div class="tab-content" id="tab-game">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Server Identity</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Server Name <span class="tt" data-tip="Name shown in the public server browser. Max 100 characters. Include region tags like [EU] or [US] and game mode for visibility.">?</span></label>
+              <input type="text" id="gameName" placeholder="My Arma Reforger Server">
+            </div>
+            <div class="form-group">
+              <label>Server Password <span class="tt" data-tip="Password players must enter to join. Leave blank for a public server. Min 3 characters if set, no spaces allowed.">?</span></label>
+              <input type="password" id="gamePassword" placeholder="Leave blank for public">
+            </div>
+            <div class="form-group">
+              <label>Admin Password <span class="tt" data-tip="Password to gain admin access in-game. Highly recommended. Players type #login [password] in chat to become admin. No spaces allowed.">?</span></label>
+              <input type="password" id="gamePasswordAdmin" placeholder="Recommended — set a strong password">
+            </div>
+            <div class="form-group">
+              <label>Dedicated Server ID <span class="tt" data-tip="Unique server identifier from your Bohemia Interactive account. Optional but recommended for persistent server identity and easier management via the BI backend.">?</span></label>
+              <input type="text" id="dedicatedServerId" placeholder="From your Bohemia Interactive account">
+            </div>
+            <div class="form-group">
+              <label>Region <span class="tt" data-tip="Geographic region for matchmaking and server browser filtering. Choose the region closest to your server's physical location.">?</span></label>
+              <select id="gameRegion">
+                <option value="">-- Not Set --</option>
+                <option value="US">US — North America</option>
+                <option value="EU">EU — Europe</option>
+                <option value="AS">AS — Asia</option>
+                <option value="AU">AU — Australia / Oceania</option>
+                <option value="SA">SA — South America</option>
+                <option value="AF">AF — Africa</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Scenario ID <span class="tt" data-tip="The mission/scenario to run. Format: {16HEX}Path/To/Mission.conf — e.g. {ECC61978EDCC2B5A}Missions/23_Campaign.conf. Only one scenario can run at a time (no rotation as of v0.9.8+).">?</span></label>
+              <input type="text" id="gameScenarioId" placeholder="{ECC61978EDCC2B5A}Missions/23_Campaign.conf">
+            </div>
+            <div class="form-group full">
+              <label>Admin Steam IDs <span class="tt" data-tip="List of Steam 64-bit IDs granted admin access without needing the admin password. One ID per line. Players in this list can type #login without a password.">?</span></label>
+              <textarea id="gameAdmins" placeholder="76561198200329058&#10;76561198012345678&#10;(one Steam 64-bit ID per line)" style="min-height:70px;"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Player Settings</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Max Players <span class="tt" data-tip="Maximum number of concurrent players. Range: 1-256 depending on server hardware. 32 is recommended for most servers; 64+ requires powerful hardware.">?</span></label>
+              <input type="number" id="gameMaxPlayers" placeholder="32" min="1" max="256">
+            </div>
+            <div class="form-group" style="align-self:end;">
+              <div class="checkbox-row">
+                <input type="checkbox" id="gameVisible" checked>
+                <label for="gameVisible">Visible in Server Browser <span class="tt" data-tip="Set to true to appear in the public server browser. Set to false for private/testing servers.">?</span></label>
+              </div>
+              <div class="checkbox-row">
+                <input type="checkbox" id="gameCrossPlatform">
+                <label for="gameCrossPlatform">Cross-Platform Play <span class="tt" data-tip="Allow players from different platforms (PC, Xbox, PlayStation) to play together. Requires supportedPlatforms and supportedGameClientTypes to also be configured.">?</span></label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Supported Platforms <span class="tt" data-tip="Which platform clients are allowed. PLATFORM_PC = PC/Steam, PLATFORM_XBL = Xbox, PLATFORM_PSN = PlayStation. Must align with crossPlatform setting.">?</span></label>
+              <div class="chip-group" style="margin-top:8px" id="platform-chips">
+                <div class="chip" data-val="PLATFORM_PC" onclick="toggleChip(this)">PC</div>
+                <div class="chip" data-val="PLATFORM_XBL" onclick="toggleChip(this)">XBOX</div>
+                <div class="chip" data-val="PLATFORM_PSN" onclick="toggleChip(this)">PSN</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Supported Game Client Types <span class="tt" data-tip="Allowed game client types. PC = desktop clients, CONSOLE = console clients. Used alongside supportedPlatforms for cross-play configuration.">?</span></label>
+              <div class="chip-group" style="margin-top:8px" id="client-type-chips">
+                <div class="chip" data-val="PC" onclick="toggleChip(this)">PC</div>
+                <div class="chip" data-val="CONSOLE" onclick="toggleChip(this)">CONSOLE</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Mods Required by Default <span class="tt" data-tip="If true, all mods in the list are required for clients to join (unless individually overridden). Default: true. Set false to make all mods optional by default.">?</span></label>
+              <div class="checkbox-row" style="margin-top:8px">
+                <input type="checkbox" id="modsRequiredByDefault" checked>
+                <label for="modsRequiredByDefault">modsRequiredByDefault</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RCON TAB ═══ -->
+    <div class="tab-content" id="tab-rcon">
+      <div class="card">
+        <div class="card-header"><div class="card-title">RCON Configuration</div></div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">RCON (Remote Console) is a UDP-based protocol for issuing admin commands remotely. Secure with firewall rules — only allow trusted IPs.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>RCON Address <span class="tt" data-tip="IP address the RCON socket binds to. Use 0.0.0.0 for all interfaces, or restrict to a specific IP for security. Recommended: restrict to your admin IP only via firewall.">?</span></label>
+              <input type="text" id="rconAddress" placeholder="0.0.0.0">
+            </div>
+            <div class="form-group">
+              <label>RCON Port <span class="tt" data-tip="UDP port for RCON connections. Must differ from game port and A2S port. Recommended: firewall this port to allow only your admin IP.">?</span></label>
+              <input type="number" id="rconPort" placeholder="2403">
+            </div>
+            <div class="form-group">
+              <label>RCON Password <span class="tt" data-tip="Required password to authenticate RCON connections. Min 3 characters, no spaces. Use a strong unique password — RCON has full admin access.">?</span></label>
+              <input type="password" id="rconPassword" placeholder="Strong password, no spaces">
+            </div>
+            <div class="form-group">
+              <label>Permission Level <span class="tt" data-tip="admin: Full control — kick, ban, restart, etc. monitor: Read-only access — can query server status but cannot issue commands.">?</span></label>
+              <select id="rconPermission">
+                <option value="admin">admin — Full control</option>
+                <option value="monitor">monitor — Read-only</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>IP Whitelist <span class="tt" data-tip="Only IPs in this list can connect via RCON. Leave blank to allow any IP (relies on password only). Recommended: add your admin IP(s) here for extra security.">?</span></label>
+              <textarea id="rconWhitelist" placeholder="Leave blank to allow any IP&#10;192.168.1.100&#10;10.0.0.5"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>IP Blacklist <span class="tt" data-tip="IPs in this list are blocked from RCON entirely, even with the correct password.">?</span></label>
+              <textarea id="rconBlacklist" placeholder="Leave blank for no blacklist"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ GAME PROPERTIES TAB ═══ -->
+    <div class="tab-content" id="tab-properties">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Visual &amp; Performance</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Server Max View Distance (m) <span class="tt" data-tip="Maximum render/view distance in meters. Higher = better visuals, higher CPU cost. Range: 500-10000. Recommended: 1600-2500 for balanced performance.">?</span></label>
+              <input type="number" id="propMaxViewDist" placeholder="1600" min="500" max="10000">
+            </div>
+            <div class="form-group">
+              <label>Network View Distance (m) <span class="tt" data-tip="Distance at which entities are synced over the network. Should be equal to or less than serverMaxViewDistance. Lower = better performance, less situational awareness.">?</span></label>
+              <input type="number" id="propNetViewDist" placeholder="1500" min="500" max="5000">
+            </div>
+            <div class="form-group">
+              <label>Min Grass Distance (m) <span class="tt" data-tip="Minimum distance at which grass is rendered. 0 = no minimum enforced. Range: 0 or 50-150. Affects performance significantly — lower improves FPS.">?</span></label>
+              <input type="number" id="propGrassDist" placeholder="50" min="0" max="150">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Gameplay &amp; Anti-Cheat</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="checkbox-row"><input type="checkbox" id="propThirdPerson"><label for="propThirdPerson">Disable Third Person <span class="tt" data-tip="Forces first-person only view for all players. Recommended for realism/mil-sim servers.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="propFastValidation" checked><label for="propFastValidation">Fast Validation <span class="tt" data-tip="Speeds up client connection validation using minimum information. ALWAYS enable for public servers. Only disable if you experience connection issues.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="propBattleye" checked><label for="propBattleye">BattlEye Anti-Cheat <span class="tt" data-tip="Enables BattlEye anti-cheat. Always enable for public servers. When editing BattlEye config, append settings — never erase existing content or it will break.">?</span></label></div>
+            </div>
+            <div class="form-group">
+              <div class="checkbox-row"><input type="checkbox" id="propVONUI"><label for="propVONUI">Disable VON UI <span class="tt" data-tip="Hides the Voice Over Network UI elements from players. The VON system still works, just without visual indicators.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="propVONDirectUI"><label for="propVONDirectUI">Disable VON Direct Speech UI <span class="tt" data-tip="Hides the Direct Speech VON UI elements. Direct speech (proximity voice) still functions but without visual indicators.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="propVONCrossFaction"><label for="propVONCrossFaction">VON Cross-Faction Transmit <span class="tt" data-tip="If enabled, players can transmit voice over radio across faction lines. Disable for realistic faction-separated comms.">?</span></label></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Mission Header</div></div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Optional overrides for mission-specific parameters. Only included in exported JSON if values are filled in.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>m_iPlayerCount <span class="tt" data-tip="Override for the mission's player count. This tells the mission how many players to expect. Leave blank to use the mission's default.">?</span></label>
+              <input type="number" id="missionPlayerCount" placeholder="Leave blank to not override">
+            </div>
+            <div class="form-group">
+              <label>m_eEditableGameFlags <span class="tt" data-tip="Bitmask for which game flags are editable by admins. Common value: 6. Refer to mission documentation for specific flag values.">?</span></label>
+              <input type="number" id="missionEditableFlags" placeholder="e.g. 6">
+            </div>
+            <div class="form-group">
+              <label>m_eDefaultGameFlags <span class="tt" data-tip="Bitmask for the default game flags applied when the mission starts. Common value: 6. Refer to mission documentation for specific flag values.">?</span></label>
+              <input type="number" id="missionDefaultFlags" placeholder="e.g. 6">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MODS TAB ═══ -->
+    <div class="tab-content" id="tab-mods">
+      <div class="card">
+        <div class="card-header" style="position:sticky;top:0;z-index:51;background:var(--panel2);">
+          <div class="card-title">Mods</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-sm" onclick="exportModList()">EXPORT .TXT</button>
+            <button class="btn btn-sm" onclick="exportModsJson()">EXPORT .JSON</button>
+            <label class="btn btn-sm" for="import-mods-input" style="cursor:pointer;margin:0">IMPORT MODS</label>
+            <input type="file" id="import-mods-input" accept=".json" style="display:none" onchange="importModsFromFile(event)">
+            <button class="btn btn-sm" onclick="sortMods()">SORT A-Z</button>
+            <button class="btn btn-sm btn-primary" onclick="toggleAddMod()">+ ADD MOD</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="mods-toolbar">
+            <div class="mods-search">
+              <div class="search-prefix">SEARCH</div>
+              <input type="text" id="mod-search" placeholder="Filter by name or ID..." oninput="filterMods()">
+            </div>
+            <div class="mods-count" id="mods-count">0 MODS</div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="mod-table">
+              <thead><tr>
+                <th></th><th>Mod ID</th><th>Name</th><th>Version</th><th>Required</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="mods-tbody"></tbody>
+            </table>
+          </div>
+          <div class="add-mod-panel" id="add-mod-panel">
+            <div class="section-title">Add New Mod</div>
+            <div class="add-mod-grid">
+              <div class="form-group">
+                <label>Mod ID <span class="tt" data-tip="16-character hex Workshop mod ID from the Arma Reforger Workshop URL or Workbench.">?</span></label>
+                <input type="text" id="new-mod-id" placeholder="5965550F24A0C152">
+              </div>
+              <div class="form-group">
+                <label>Mod Name <span class="tt" data-tip="Human-readable name for your reference. Not functional — the modId is what the server uses.">?</span></label>
+                <input type="text" id="new-mod-name" placeholder="My Awesome Mod">
+              </div>
+              <div class="form-group">
+                <label>Version <span class="tt" data-tip="Specific version to load. If omitted, the latest available version is used.">?</span></label>
+                <input type="text" id="new-mod-version" placeholder="1.0.0">
+              </div>
+              <div class="form-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-success" onclick="addMod()">ADD</button>
+              </div>
+            </div>
+            <div class="checkbox-row" style="margin-top:10px">
+              <input type="checkbox" id="new-mod-required" checked>
+              <label for="new-mod-required">Required <span class="tt" data-tip="If true, clients must have this mod to join. If false, the mod is optional and the server starts even if the client doesn't have it.">?</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ OPERATING TAB ═══ -->
+    <div class="tab-content" id="tab-operating">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Server Behavior</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <div class="checkbox-row"><input type="checkbox" id="opLobbySync" checked><label for="opLobbySync">Lobby Player Synchronise <span class="tt" data-tip="Synchronises the player list with the GameAPI heartbeat before the mission starts. Recommended: true. Disable only if experiencing lobby-related issues.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="opDisableServerShutdown"><label for="opDisableServerShutdown">Disable Server Shutdown <span class="tt" data-tip="Prevents the server from automatically shutting down. Useful for persistent servers that should stay running even when empty.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="opDisableCrashReporter"><label for="opDisableCrashReporter">Disable Crash Reporter <span class="tt" data-tip="Disables the automatic server-side crash report submission to Bohemia Interactive. Only disable if you have privacy concerns or bandwidth issues.">?</span></label></div>
+            </div>
+            <div class="form-group">
+              <div class="checkbox-row"><input type="checkbox" id="opDisableAI"><label for="opDisableAI">Disable AI <span class="tt" data-tip="Completely prevents initialization of the AI world and all AI components. Useful for PvP-only servers to save significant server resources.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="opDisableNavmesh"><label for="opDisableNavmesh">Disable Navmesh Streaming <span class="tt" data-tip="Loads the full navmesh into memory instead of streaming it. Can improve AI pathfinding performance but uses more RAM. Pass an empty array [] to disable.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="opAddonsVerify"><label for="opAddonsVerify">Addons Verify <span class="tt" data-tip="Verifies the integrity of all installed mods on startup. If corrupted mods are found, the server shuts down and logs the affected files.">?</span></label></div>
+              <div class="checkbox-row"><input type="checkbox" id="opAddonsRepair"><label for="opAddonsRepair">Addons Repair <span class="tt" data-tip="If enabled, corrupted mods are automatically repaired. If repair fails, the server shuts down. Runs after Addons Verify.">?</span></label></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Timers &amp; Limits</div></div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>AI Limit <span class="tt" data-tip="Maximum number of AI entities. -1 = unlimited. 0-50 = minimal impact, 50-100 = moderate (recommended), 100+ = high CPU. Set to 0 alongside Disable AI for pure PvP.">?</span></label>
+              <input type="number" id="opAILimit" placeholder="-1 (unlimited)" min="-1">
+            </div>
+            <div class="form-group">
+              <label>Player Save Time (s) <span class="tt" data-tip="How often player data is saved to disk, in seconds. Range: 10-300. Lower = less data loss risk but more I/O. Recommended: 60-120 seconds.">?</span></label>
+              <input type="number" id="opPlayerSaveTime" placeholder="120" min="10" max="300">
+            </div>
+            <div class="form-group">
+              <label>Slot Reservation Timeout (s) <span class="tt" data-tip="How long the backend reserves a slot for a kicked player. Value of 5 effectively disables reservation (same as normal disconnect timeout). Default: 60.">?</span></label>
+              <input type="number" id="opSlotReservationTimeout" placeholder="60" min="0">
+            </div>
+            <div class="form-group">
+              <label>Server FPS <span class="tt" data-tip="Sets the server simulation FPS. Recommended range: 60-120 to balance performance and resource usage. Higher FPS = smoother simulation but more CPU.">?</span></label>
+              <input type="number" id="opServerFps" placeholder="60" min="10" max="240">
+            </div>
+            <div class="form-group">
+              <label>Freeze Timeout (s) <span class="tt" data-tip="Time period before forcefully crashing on application freeze. 0 = completely disables freeze detection. Useful for debugging vs production environments.">?</span></label>
+              <input type="number" id="opFreezeTimeout" placeholder="0 (disabled)" min="0">
+            </div>
+          </div>
+
+          <div class="sep"></div>
+          <div class="section-title">Join Queue</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Join Queue Max Size <span class="tt" data-tip="Maximum number of players that can queue to join a full server. Players in queue are notified of their position and join when a slot opens.">?</span></label>
+              <input type="number" id="opJoinQueue" placeholder="10" min="0" max="100">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PERSISTENCE TAB ═══ -->
+    <div class="tab-content" id="tab-persistence">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Persistence Settings</div></div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Persistence allows game state, player data, and world changes to be saved and restored across server restarts. Leave blank to use mission defaults.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Auto Save Interval (min) <span class="tt" data-tip="Interval in minutes between automatic saves. 0 = disabled. The server saves all persistent data at this interval if the current mission supports it.">?</span></label>
+              <input type="number" id="persAutoSave" placeholder="15" min="0">
+            </div>
+            <div class="form-group">
+              <label>Hive ID <span class="tt" data-tip="Number identifying this server (hive) when multiple servers share the same persistence database. Used to separate UUIDs between servers. Only relevant for multi-server setups.">?</span></label>
+              <input type="number" id="persHiveId" placeholder="1 (default)" min="1">
+            </div>
+          </div>
+
+          <div class="sep"></div>
+          <div class="section-title">Database Override <span style="font-size:11px;font-weight:400;color:var(--text-muted);font-family:'Barlow',sans-serif;letter-spacing:0;text-transform:none;margin-left:8px;">(Advanced — WebAPI database)</span></div>
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Override the default local JSON storage with a remote WebAPI database. Leave all fields blank to use default local file storage.</p>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Database Preset Path <span class="tt" data-tip="Path to a database config preset file defined in game/mod data. Example: {0123456789ABCDEF}Configs/Systems/Persistence/Database/JsonWebApi.conf">?</span></label>
+              <input type="text" id="persDbPreset" placeholder="{0123456789ABCDEF}Configs/Systems/Persistence/Database/JsonWebApi.conf">
+            </div>
+            <div class="form-group full">
+              <label>Database URL <span class="tt" data-tip="Full URL to your WebAPI persistence endpoint. Example: https://persistence-db.yourserver.local:5539/api/v1">?</span></label>
+              <input type="text" id="persDbUrl" placeholder="https://your-persistence-api.example.com/api/v1">
+            </div>
+            <div class="form-group full">
+              <label>API Key Header <span class="tt" data-tip="Custom HTTP header name for authentication. Example: X-API-KEY">?</span></label>
+              <input type="text" id="persDbHeaderKey" placeholder="X-API-KEY">
+            </div>
+            <div class="form-group full">
+              <label>API Key Value <span class="tt" data-tip="Value for the API authentication header.">?</span></label>
+              <input type="password" id="persDbHeaderVal" placeholder="Your API key">
+            </div>
+            <div class="form-group full">
+              <label>Content-Type Header <span class="tt" data-tip="Content-Type header value for API requests. Typically: application/json">?</span></label>
+              <input type="text" id="persDbContentType" placeholder="application/json">
+            </div>
+          </div>
+
+          <div class="sep"></div>
+          <div class="section-title">Storage <span style="font-size:11px;font-weight:400;color:var(--text-muted);font-family:'Barlow',sans-serif;letter-spacing:0;text-transform:none;margin-left:8px;">(Advanced)</span></div>
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Maps a named storage slot to a database. Leave blank to use mission defaults. The <code style="font-family:'Share Tech Mono',monospace;color:var(--accent)">session</code> storage is the default save slot.</p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Session Storage → Database <span class="tt" data-tip="Maps the 'session' storage slot to a named database. Example: webapi — this tells the persistence system to use your configured WebAPI database for session saves.">?</span></label>
+              <input type="text" id="persSessionDb" placeholder="webapi (or leave blank for default)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ JSON PREVIEW TAB ═══ -->
+    <div class="tab-content" id="tab-json">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">JSON Preview</div>
+          <button class="btn btn-sm btn-success" onclick="saveConfig()">EXPORT JSON</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="json-preview" id="json-preview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ VALIDATOR TAB ═══ -->
+    <div class="tab-content" id="tab-validator">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Config Validator</div>
+          <button class="btn btn-sm btn-primary" onclick="runValidator()">&#9654; RUN VALIDATION</button>
+        </div>
+        <div class="card-body">
+          <div class="val-summary">
+            <div class="val-stat errors"><div class="val-stat-num" id="val-error-count">&#8212;</div><div class="val-stat-label">Errors</div></div>
+            <div class="val-stat warnings"><div class="val-stat-num" id="val-warn-count">&#8212;</div><div class="val-stat-label">Warnings</div></div>
+            <div class="val-stat ok"><div class="val-stat-num" id="val-pass-count">&#8212;</div><div class="val-stat-label">Passed</div></div>
+          </div>
+          <div class="val-filter-bar">
+            <button class="val-filter active" id="vf-all" onclick="setValFilter('all')">ALL</button>
+            <button class="val-filter" id="vf-error" onclick="setValFilter('error')">ERRORS</button>
+            <button class="val-filter" id="vf-warning" onclick="setValFilter('warning')">WARNINGS</button>
+            <button class="val-filter" id="vf-pass" onclick="setValFilter('pass')">PASSED</button>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-left:auto" id="val-last-run"></span>
+          </div>
+          <div id="val-results"><div class="val-empty">&#9670; RUN VALIDATION TO CHECK YOUR CONFIG</div></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ═══ SCENARIO BROWSER TAB ═══ -->
+    <div class="tab-content" id="tab-scenarios">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Scenario Browser</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="scenario-search" placeholder="Search scenarios..." style="width:220px" oninput="filterScenarios()">
+          </div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Click any scenario to set it as your active scenarioId. The highlighted card shows your currently configured scenario.</p>
+
+          <div id="recent-scenarios-section" style="display:none;margin-bottom:20px;">
+            <div class="section-title">Recently Used</div>
+            <div id="recent-scenarios-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div>
+          </div>
+
+          <div class="wk-cat-filter" id="scenario-cat-filter">
+            <button class="wk-cat active" data-cat="all" onclick="setScenarioCat(this)">ALL</button>
+            <button class="wk-cat" data-cat="coop" onclick="setScenarioCat(this)">CO-OP</button>
+            <button class="wk-cat" data-cat="pvp" onclick="setScenarioCat(this)">PVP</button>
+            <button class="wk-cat" data-cat="sandbox" onclick="setScenarioCat(this)">SANDBOX</button>
+            <button class="wk-cat" data-cat="gamemaster" onclick="setScenarioCat(this)">GAME MASTER</button>
+          </div>
+          <div class="scenario-grid" id="scenario-grid"></div>
+          <div class="sep"></div>
+          <div class="section-title">Custom Scenario ID</div>
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Paste a Workshop or custom scenario ID not listed above.</p>
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <div class="form-group" style="flex:1">
+              <label>Scenario ID</label>
+              <input type="text" id="custom-scenario-input" placeholder="{XXXXXXXXXXXXXXXX}Missions/YourMission.conf">
+            </div>
+            <button class="btn btn-primary btn-sm" style="margin-bottom:1px" onclick="applyCustomScenario()">APPLY</button>
+          </div>
+          <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim)">
+            Currently set: <span id="scenario-current-display" style="color:var(--accent)">— none —</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ WORKSHOP VIEWER TAB ═══ -->
+    <div class="tab-content" id="tab-workshop">
+      <!-- AI SEARCH CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">&#9733; AI Mod Search</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="ai-key-status-badge" style="font-family:'Share Tech Mono',monospace;font-size:9px;padding:2px 8px;border:1px solid var(--border);color:var(--text-muted)">NO KEY</span>
+            <button class="btn btn-sm" onclick="toggleApiKeyPanel()" id="api-key-toggle-btn">SET API KEY</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- API Key Panel (hidden by default) -->
+          <div id="api-key-panel" style="display:none;background:var(--highlight);border:1px solid var(--border-bright);padding:16px;margin-bottom:16px;">
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">ANTHROPIC API KEY</div>
+            <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;">Your key is stored locally in your browser only and never sent anywhere except directly to Anthropic's API. Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>.</p>
+            <div style="display:flex;gap:10px;align-items:flex-end">
+              <div class="form-group" style="flex:1">
+                <label>API Key (sk-ant-...)</label>
+                <input type="password" id="anthropic-api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="saveApiKey()" style="margin-bottom:1px">SAVE</button>
+              <button class="btn btn-danger btn-sm" onclick="clearApiKey()" style="margin-bottom:1px">CLEAR</button>
+            </div>
+            <div id="api-key-saved-indicator" style="display:none;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--success)">&#10003; Key saved to localStorage</div>
+          </div>
+
+          <div id="ai-key-required-msg" style="display:none;background:var(--panel2);border:1px solid var(--border);padding:16px;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.8;">
+            <span style="color:var(--warn)">&#9650; API KEY REQUIRED</span><br>
+            Click <strong style="color:var(--text)">SET API KEY</strong> above to enter your Anthropic API key and unlock AI mod search.<br>
+            <span style="color:var(--text-muted)">The curated browser below works without a key.</span>
+          </div>
+
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">Describe what you're looking for — weapon packs, gameplay overhauls, factions, tools — and Claude will search its knowledge of the full Workshop.</p>
+          <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="flex:1;min-width:240px">
+              <label>Describe what you want</label>
+              <input type="text" id="ai-mod-query" placeholder="e.g. German military faction, anti-tank weapons, medical system..." onkeydown="if(event.key==='Enter')searchModsAI()">
+            </div>
+            <button class="btn btn-primary" id="ai-search-btn" onclick="searchModsAI()" style="margin-bottom:1px">&#9654; SEARCH</button>
+          </div>
+          <div id="ai-search-results"></div>
+        </div>
+      </div>
+
+      <!-- URL IMPORT CARD -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">&#128279; Import from Workshop URL</div></div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">Paste a Workshop mod URL and the mod ID will be extracted automatically. You can also paste just the mod ID directly.</p>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="flex:1;min-width:300px">
+              <label>Workshop URL or Mod ID</label>
+              <input type="text" id="url-import-input" placeholder="https://reforger.armaplatform.com/workshop/5965550F24A0C152  or just  5965550F24A0C152" oninput="previewUrlImport()">
+            </div>
+            <button class="btn btn-primary" onclick="importFromUrl()" style="margin-bottom:1px">IMPORT</button>
+          </div>
+          <div id="url-import-preview" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- IN-GAME EXPORT IMPORT CARD -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">&#128190; Import from In-Game Export</div></div>
+        <div class="card-body">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:4px;line-height:1.6;">Subscribe to mods in-game, then export your list from the Arma Reforger mod manager. Load that file here to import all subscribed mods at once.</p>
+          <div style="background:var(--panel2);border:1px solid var(--border);padding:14px;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);line-height:1.8;">
+            <div style="color:var(--accent);margin-bottom:6px;letter-spacing:2px;font-size:10px;">HOW TO EXPORT FROM REFORGER:</div>
+            1. Launch Arma Reforger<br>
+            2. Go to <strong style="color:var(--text)">Workshop</strong> &#8594; <strong style="color:var(--text)">Subscribed Mods</strong><br>
+            3. Click <strong style="color:var(--text)">Export Mod List</strong> (top right)<br>
+            4. Save the .json file and load it below
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <label class="btn btn-primary btn-sm" for="ingame-export-input" style="cursor:pointer;margin:0">&#128194; LOAD EXPORT FILE</label>
+            <input type="file" id="ingame-export-input" accept=".json" style="display:none" onchange="importIngameExport(event)">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" onclick="document.getElementById('paste-ingame-panel').style.display=document.getElementById('paste-ingame-panel').style.display==='none'?'block':'none'">PASTE JSON</button>
+            </div>
+            <span id="ingame-import-status" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim)"></span>
+          </div>
+          <div id="paste-ingame-panel" style="display:none;margin-top:12px">
+            <div class="form-group">
+              <label>Paste In-Game Export JSON</label>
+              <textarea id="ingame-paste-json" placeholder='[{"modId":"...","name":"..."},...]' style="min-height:100px;font-family:Share Tech Mono,monospace;font-size:11px"></textarea>
+            </div>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="importIngamePaste()">IMPORT PASTED JSON</button>
+          </div>
+          <div id="ingame-import-preview" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- CURATED BROWSER CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Curated Mod Browser</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted)">POPULAR MODS — COMMUNITY CURATED</div>
+        </div>
+        <div class="card-body">
+          <div class="workshop-toolbar">
+            <div class="mods-search" style="flex:1;min-width:200px">
+              <div class="search-prefix">SEARCH</div>
+              <input type="text" id="workshop-search" placeholder="Search mods by name or ID..." oninput="filterWorkshop()">
+            </div>
+            <div id="wk-in-list-count" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);padding:8px 12px;border:1px solid var(--border);background:var(--bg);">0 IN CONFIG</div>
+          </div>
+          <div style="margin-bottom:8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);letter-spacing:1px" id="wk-result-count"></div>
+          <div class="wk-cat-filter" id="workshop-cat-filter">
+            <button class="wk-cat active" data-cat="all" onclick="setWorkshopCat(this)">ALL</button>
+            <button class="wk-cat" data-cat="gameplay" onclick="setWorkshopCat(this)">GAMEPLAY</button>
+            <button class="wk-cat" data-cat="weapons" onclick="setWorkshopCat(this)">WEAPONS</button>
+            <button class="wk-cat" data-cat="vehicles" onclick="setWorkshopCat(this)">VEHICLES</button>
+            <button class="wk-cat" data-cat="maps" onclick="setWorkshopCat(this)">MAPS</button>
+            <button class="wk-cat" data-cat="ui" onclick="setWorkshopCat(this)">UI / TOOLS</button>
+            <button class="wk-cat" data-cat="framework" onclick="setWorkshopCat(this)">FRAMEWORKS</button>
+            <button class="wk-cat" data-cat="military" onclick="setWorkshopCat(this)">FACTIONS</button>
+          </div>
+          <div class="workshop-grid" id="workshop-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ COMPARE TAB ═══ -->
+    <div class="tab-content" id="tab-compare">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Config Comparison</div>
+          <button class="btn btn-sm btn-primary" onclick="runCompare()" id="compare-run-btn" disabled>&#9654; COMPARE</button>
+        </div>
+        <div class="card-body">
+          <div class="compare-grid">
+            <div class="compare-panel">
+              <div class="compare-panel-header">
+                <span>CONFIG A <span id="compare-a-name" style="color:var(--text-dim);font-weight:400;font-size:12px;letter-spacing:1px;text-transform:none;font-family:'Share Tech Mono',monospace;margin-left:8px;">— not loaded —</span></span>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-sm" onclick="loadCurrentAsCompareA()">USE ACTIVE</button>
+                  <label class="btn btn-sm" for="compare-file-a" style="cursor:pointer;margin:0">LOAD FILE</label>
+                  <input type="file" id="compare-file-a" accept=".json" style="display:none" onchange="loadCompareFile('a',event)">
+                </div>
+              </div>
+              <div id="compare-a-zone">
+                <div class="compare-drop" id="compare-drop-a" onclick="document.getElementById('compare-file-a').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="dropCompareFile('a',event)">
+                  DROP CONFIG A HERE<br><span style="font-size:9px;margin-top:4px;display:block;color:var(--text-muted)">or use active config</span>
+                </div>
+              </div>
+            </div>
+            <div class="compare-panel">
+              <div class="compare-panel-header">
+                <span>CONFIG B <span id="compare-b-name" style="color:var(--text-dim);font-weight:400;font-size:12px;letter-spacing:1px;text-transform:none;font-family:'Share Tech Mono',monospace;margin-left:8px;">— not loaded —</span></span>
+                <div style="display:flex;gap:6px">
+                  <label class="btn btn-sm" for="compare-file-b" style="cursor:pointer;margin:0">LOAD FILE</label>
+                  <input type="file" id="compare-file-b" accept=".json" style="display:none" onchange="loadCompareFile('b',event)">
+                </div>
+              </div>
+              <div id="compare-b-zone">
+                <div class="compare-drop" id="compare-drop-b" onclick="document.getElementById('compare-file-b').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="dropCompareFile('b',event)">
+                  DROP CONFIG B HERE
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="compare-results"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- LOAD MODAL -->
+<div class="modal-overlay" id="load-modal">
+  <div class="modal">
+    <div class="modal-header">Load Config <button class="modal-close" onclick="document.getElementById('load-modal').classList.remove('open')">&#215;</button></div>
+    <div class="modal-body">
+      <p style="color:var(--text-dim);margin-bottom:16px;font-size:13px;">Drop a .json file or paste config JSON below.</p>
+      <div class="file-drop-zone" id="drop-zone" onclick="document.getElementById('file-input2').click()">
+        <span class="drop-icon">&#128194;</span>
+        <p>DROP JSON FILE HERE</p>
+        <p style="margin-top:4px;color:var(--text-muted)">or click to browse</p>
+      </div>
+      <input type="file" id="file-input2" accept=".json" style="display:none">
+      <div class="sep"></div>
+      <div class="form-group">
+        <label>Or Paste JSON</label>
+        <textarea id="paste-json" placeholder='{"bindAddress":"0.0.0.0",...}' style="min-height:120px;font-family:'Share Tech Mono',monospace;font-size:11px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('load-modal').classList.remove('open')">CANCEL</button>
+      <button class="btn btn-primary" onclick="loadFromPaste()">LOAD</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODS MODAL -->
+<div class="modal-overlay" id="import-mods-modal">
+  <div class="modal" style="width:560px">
+    <div class="modal-header">Import Mods <button class="modal-close" onclick="document.getElementById('import-mods-modal').classList.remove('open')">&#215;</button></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div style="background:var(--panel2);border:1px solid var(--border);padding:12px;text-align:center">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--text)" id="import-total-count">0</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim)">TOTAL</div>
+        </div>
+        <div style="background:var(--panel2);border:1px solid var(--border);padding:12px;text-align:center">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--success)" id="import-new-count">0</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim)">NEW</div>
+        </div>
+        <div style="background:var(--panel2);border:1px solid var(--border);padding:12px;text-align:center">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:#e8a84b" id="import-dupe-count">0</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim)">ALREADY HAVE</div>
+        </div>
+      </div>
+      <div id="import-preview-list" style="max-height:300px;overflow-y:auto;margin-bottom:4px"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-danger btn-sm" onclick="document.getElementById('import-mods-modal').classList.remove('open')">CANCEL</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="confirmImport('merge')">MERGE NEW ONLY</button>
+        <button class="btn btn-sm btn-primary" onclick="confirmImport('replace')">REPLACE ALL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let config = {}, mods = [], backups = [], currentFile = null, dragSrc = null;
+let valResults = [], valFilter = 'all', pendingImportMods = [];
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', e => loadFile(e.target.files[0]));
+document.getElementById('file-input2').addEventListener('change', e => { loadFile(e.target.files[0]); document.getElementById('load-modal').classList.remove('open'); });
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if(e.dataTransfer.files[0]){ loadFile(e.dataTransfer.files[0]); document.getElementById('load-modal').classList.remove('open'); }});
+
+function showTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  if(name==='json') updateJsonPreview();
+  if(name==='scenarios') { initScenarioBrowser(); }
+  if(name==='workshop') { initWorkshop(); }
+}
+
+// ─── FILE LOADING ─────────────────────────────────────────────────────────────
+function loadFile(file) {
+  if(!file) return;
+  currentFile = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try { populateForm(JSON.parse(e.target.result)); toast('Loaded: '+file.name,'success'); document.getElementById('status-text').textContent = file.name.toUpperCase(); }
+    catch(err) { toast('Invalid JSON: '+err.message,'danger'); }
+  };
+  reader.readAsText(file);
+}
+
+function loadFromPaste() {
+  const txt = document.getElementById('paste-json').value.trim();
+  if(!txt) return;
+  try { populateForm(JSON.parse(txt)); document.getElementById('load-modal').classList.remove('open'); toast('Config loaded from paste','success'); document.getElementById('status-text').textContent = 'PASTED CONFIG'; }
+  catch(err) { toast('Invalid JSON: '+err.message,'danger'); }
+}
+
+// ─── POPULATE FORM ────────────────────────────────────────────────────────────
+function populateForm(cfg) {
+  config = cfg;
+  const sv = (id,v) => { const el=document.getElementById(id); if(el && v!==undefined && v!==null) el.value=v; };
+  const sc = (id,v) => { const el=document.getElementById(id); if(el) el.checked=!!v; };
+
+  sv('bindAddress', cfg.bindAddress);
+  sv('bindPort', cfg.bindPort);
+  sv('publicAddress', cfg.publicAddress);
+  sv('publicPort', cfg.publicPort);
+  sv('gameHostBindAddress', cfg.gameHostBindAddress);
+  sv('gameHostBindPort', cfg.gameHostBindPort);
+  sv('gameHostRegisterBindAddress', cfg.gameHostRegisterBindAddress);
+  sv('gameHostRegisterPort', cfg.gameHostRegisterPort);
+
+  if(cfg.a2s){ sv('a2sAddress',cfg.a2s.address); sv('a2sPort',cfg.a2s.port); }
+
+  if(cfg.rcon){
+    sv('rconAddress',cfg.rcon.address); sv('rconPort',cfg.rcon.port);
+    sv('rconPassword',cfg.rcon.password); sv('rconPermission',cfg.rcon.permission);
+    sv('rconWhitelist',(cfg.rcon.whitelist||[]).join('\n'));
+    sv('rconBlacklist',(cfg.rcon.blacklist||[]).join('\n'));
+  }
+
+  if(cfg.game){
+    const g=cfg.game;
+    sv('gameName',g.name); sv('gamePassword',g.password); sv('gamePasswordAdmin',g.passwordAdmin);
+    sv('gameScenarioId',g.scenarioId); sv('gameMaxPlayers',g.maxPlayers);
+    sv('gameAdmins',(g.admins||[]).join('\n'));
+    sc('gameVisible',g.visible); sc('gameCrossPlatform',g.crossPlatform);
+    sc('modsRequiredByDefault', g.modsRequiredByDefault !== false);
+    sv('dedicatedServerId',cfg.dedicatedServerId);
+    sv('gameRegion',cfg.region||'');
+    document.querySelectorAll('#platform-chips .chip').forEach(c=>c.classList.toggle('selected',(g.supportedPlatforms||[]).includes(c.dataset.val)));
+    document.querySelectorAll('#client-type-chips .chip').forEach(c=>c.classList.toggle('selected',(g.supportedGameClientTypes||[]).includes(c.dataset.val)));
+    if(g.gameProperties){
+      const p=g.gameProperties;
+      sv('propMaxViewDist',p.serverMaxViewDistance); sv('propNetViewDist',p.networkViewDistance);
+      sv('propGrassDist',p.serverMinGrassDistance);
+      sc('propThirdPerson',p.disableThirdPerson); sc('propFastValidation',p.fastValidation);
+      sc('propBattleye',p.battlEye); sc('propVONUI',p.VONDisableUI);
+      sc('propVONDirectUI',p.VONDisableDirectSpeechUI); sc('propVONCrossFaction',p.VONCanTransmitCrossFaction);
+      if(p.missionHeader){ sv('missionPlayerCount',p.missionHeader.m_iPlayerCount); sv('missionEditableFlags',p.missionHeader.m_eEditableGameFlags); sv('missionDefaultFlags',p.missionHeader.m_eDefaultGameFlags); }
+    }
+    mods = g.mods ? [...g.mods] : [];
+    renderMods();
+  }
+
+  if(cfg.operating){
+    const op=cfg.operating;
+    if(op.joinQueue) sv('opJoinQueue',op.joinQueue.maxSize);
+    sv('opAILimit',op.aiLimit!==undefined?op.aiLimit:(op.AILimit!==undefined?op.AILimit:undefined));
+    sv('opPlayerSaveTime',op.playerSaveTime);
+    sv('opSlotReservationTimeout',op.slotReservationTimeout);
+    sv('opServerFps',op.serverFps||op.serverFPS);
+    sv('opFreezeTimeout',op.freezeTimeout);
+    if(op.lobbyPlayerSynchronise!==undefined) sc('opLobbySync',op.lobbyPlayerSynchronise);
+    sc('opDisableServerShutdown',op.disableServerShutdown);
+    sc('opDisableCrashReporter',op.disableCrashReporter);
+    sc('opDisableAI',op.disableAI);
+    sc('opDisableNavmesh', Array.isArray(op.disableNavmeshStreaming) ? op.disableNavmeshStreaming.length>0 : !!op.disableNavmeshStreaming);
+    sc('opAddonsVerify',op.addonsVerify||op.addonsVerification);
+    sc('opAddonsRepair',op.addonsRepair);
+  }
+
+  if(cfg.persistence){
+    const p=cfg.persistence;
+    sv('persAutoSave',p.autoSaveInterval);
+    sv('persHiveId',p.hiveId);
+    if(p.databases&&p.databases.webapi){
+      sv('persDbPreset',p.databases.webapi.preset);
+      if(p.databases.webapi.options){
+        sv('persDbUrl',p.databases.webapi.options.url);
+        const hdrs=p.databases.webapi.options.headers||{};
+        const keys=Object.keys(hdrs);
+        if(keys.length>0){ sv('persDbHeaderKey',keys[0]); sv('persDbHeaderVal',hdrs[keys[0]]); }
+        sv('persDbContentType',hdrs['Content-Type']);
+      }
+    }
+    if(p.storages&&p.storages.session) sv('persSessionDb',p.storages.session.database);
+  }
+}
+
+// ─── BUILD CONFIG ─────────────────────────────────────────────────────────────
+function buildConfig(){
+  const gv = id => { const el=document.getElementById(id); return el?el.value.trim():undefined; };
+  const gn = id => { const v=gv(id); return (v!==undefined&&v!==''&&!isNaN(+v))?+v:undefined; };
+  const gb = id => { const el=document.getElementById(id); return el?el.checked:undefined; };
+  const gl = id => { const v=gv(id); return v?v.split('\n').map(s=>s.trim()).filter(Boolean):[]; };
+
+  const platforms = [...document.querySelectorAll('#platform-chips .chip.selected')].map(c=>c.dataset.val);
+  const clientTypes = [...document.querySelectorAll('#client-type-chips .chip.selected')].map(c=>c.dataset.val);
+
+  const cfg = {};
+
+  // Top-level optional
+  const dsId=gv('dedicatedServerId'); if(dsId) cfg.dedicatedServerId=dsId;
+  const region=gv('gameRegion'); if(region) cfg.region=region;
+  const ghba=gv('gameHostBindAddress'); if(ghba) cfg.gameHostBindAddress=ghba;
+  const ghbp=gn('gameHostBindPort'); if(ghbp!==undefined) cfg.gameHostBindPort=ghbp;
+  const ghra=gv('gameHostRegisterBindAddress'); if(ghra) cfg.gameHostRegisterBindAddress=ghra;
+  const ghrp=gn('gameHostRegisterPort'); if(ghrp!==undefined) cfg.gameHostRegisterPort=ghrp;
+
+  cfg.bindAddress = gv('bindAddress')||'0.0.0.0';
+  cfg.bindPort = gn('bindPort')||2401;
+  cfg.publicAddress = gv('publicAddress')||'';
+  cfg.publicPort = gn('publicPort')||2401;
+  cfg.a2s = { address:gv('a2sAddress')||'', port:gn('a2sPort')||2402 };
+  cfg.rcon = { address:gv('rconAddress')||'0.0.0.0', port:gn('rconPort')||2403, password:gv('rconPassword')||'', permission:gv('rconPermission')||'admin', blacklist:gl('rconBlacklist'), whitelist:gl('rconWhitelist') };
+
+  const mpc=gn('missionPlayerCount'), mef=gn('missionEditableFlags'), mdf=gn('missionDefaultFlags');
+  const missionHeader=(mpc!==undefined||mef!==undefined||mdf!==undefined)?{ ...(mpc!==undefined&&{m_iPlayerCount:mpc}), ...(mef!==undefined&&{m_eEditableGameFlags:mef}), ...(mdf!==undefined&&{m_eDefaultGameFlags:mdf}) }:undefined;
+
+  const gameProps = {
+    serverMaxViewDistance:gn('propMaxViewDist')||1600,
+    serverMinGrassDistance:gn('propGrassDist')??50,
+    networkViewDistance:gn('propNetViewDist')||1500,
+    disableThirdPerson:gb('propThirdPerson'),
+    fastValidation:gb('propFastValidation'),
+    battlEye:gb('propBattleye'),
+    VONDisableUI:gb('propVONUI'),
+    VONDisableDirectSpeechUI:gb('propVONDirectUI'),
+    VONCanTransmitCrossFaction:gb('propVONCrossFaction'),
+  };
+  if(missionHeader) gameProps.missionHeader=missionHeader;
+
+  cfg.game = {
+    name:gv('gameName')||'',
+    password:gv('gamePassword')||'',
+    passwordAdmin:gv('gamePasswordAdmin')||'',
+    admins:gl('gameAdmins'),
+    scenarioId:gv('gameScenarioId')||'',
+    maxPlayers:gn('gameMaxPlayers')||32,
+    visible:gb('gameVisible'),
+    crossPlatform:gb('gameCrossPlatform'),
+    supportedPlatforms:platforms,
+    ...(clientTypes.length>0&&{supportedGameClientTypes:clientTypes}),
+    modsRequiredByDefault:gb('modsRequiredByDefault'),
+    gameProperties:gameProps,
+    mods:mods
+  };
+
+  // Operating
+  const op = {};
+  if(gb('opLobbySync')!==undefined) op.lobbyPlayerSynchronise=gb('opLobbySync');
+  if(gb('opDisableServerShutdown')) op.disableServerShutdown=true;
+  if(gb('opDisableCrashReporter')) op.disableCrashReporter=true;
+  if(gb('opDisableAI')) op.disableAI=true;
+  if(gb('opDisableNavmesh')) op.disableNavmeshStreaming=[];
+  if(gb('opAddonsVerify')) op.addonsVerify=true;
+  if(gb('opAddonsRepair')) op.addonsRepair=true;
+  const aiL=gn('opAILimit'); if(aiL!==undefined) op.aiLimit=aiL;
+  const pst=gn('opPlayerSaveTime'); if(pst!==undefined) op.playerSaveTime=pst;
+  const srt=gn('opSlotReservationTimeout'); if(srt!==undefined) op.slotReservationTimeout=srt;
+  const sfps=gn('opServerFps'); if(sfps!==undefined) op.serverFps=sfps;
+  const ft=gn('opFreezeTimeout'); if(ft!==undefined) op.freezeTimeout=ft;
+  const jqSize=gn('opJoinQueue');
+  op.joinQueue={maxSize:jqSize!==undefined?jqSize:10};
+  cfg.operating=op;
+
+  // Persistence
+  const pAutoSave=gn('persAutoSave'), pHiveId=gn('persHiveId');
+  const pPreset=gv('persDbPreset'), pUrl=gv('persDbUrl');
+  const pHdrKey=gv('persDbHeaderKey'), pHdrVal=gv('persDbHeaderVal'), pCT=gv('persDbContentType');
+  const pSessDb=gv('persSessionDb');
+  if(pAutoSave!==undefined||pHiveId!==undefined||pPreset||pUrl||pSessDb){
+    const pers = {};
+    if(pAutoSave!==undefined) pers.autoSaveInterval=pAutoSave;
+    if(pHiveId!==undefined) pers.hiveId=pHiveId;
+    if(pPreset||pUrl||pHdrKey){
+      const dbOpts={};
+      if(pUrl) dbOpts.url=pUrl;
+      if(pHdrKey||pCT){
+        const hdrs={};
+        if(pHdrKey&&pHdrVal) hdrs[pHdrKey]=pHdrVal;
+        if(pCT) hdrs['Content-Type']=pCT;
+        dbOpts.headers=hdrs;
+      }
+      const dbEntry={};
+      if(pPreset) dbEntry.preset=pPreset;
+      if(Object.keys(dbOpts).length>0) dbEntry.options=dbOpts;
+      pers.databases={webapi:dbEntry};
+    }
+    if(pSessDb) pers.storages={session:{database:pSessDb}};
+    cfg.persistence=pers;
+  }
+
+  return cfg;
+}
+
+// ─── MODS ────────────────────────────────────────────────────────────────────
+function renderMods(filter=''){
+  const tbody=document.getElementById('mods-tbody');
+  const search=filter.toLowerCase();
+  const filtered=mods.filter(m=>!search||m.name.toLowerCase().includes(search)||m.modId.toLowerCase().includes(search));
+  tbody.innerHTML=filtered.map(m=>{
+    const i=mods.indexOf(m);
+    return `<tr draggable="true" data-idx="${i}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event)" ondrop="dropMod(event,${i})" ondragend="dragEnd()">
+      <td><span class="drag-handle" title="Drag to reorder">&#8943;</span></td>
+      <td><span class="mod-id">${m.modId}</span></td>
+      <td style="font-weight:500">${escHtml(m.name)}</td>
+      <td><span class="mod-version">${escHtml(m.version||'')}</span></td>
+      <td><span class="badge ${m.required?'badge-required':'badge-optional'}">${m.required?'REQ':'OPT'}</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="removeMod(${i})">REMOVE</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('mods-count').textContent=mods.length+' MOD'+(mods.length!==1?'S':'');
+}
+
+function filterMods(){ renderMods(document.getElementById('mod-search').value); }
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function removeMod(idx){ makeBackup(); mods.splice(idx,1); renderMods(document.getElementById('mod-search').value); toast('Mod removed'); }
+function sortMods(){ makeBackup(); mods.sort((a,b)=>a.name.localeCompare(b.name)); renderMods(); toast('Mods sorted'); }
+function toggleAddMod(){ const p=document.getElementById('add-mod-panel'); p.classList.toggle('open'); if(p.classList.contains('open')) document.getElementById('new-mod-id').focus(); }
+
+function addMod(){
+  const id=document.getElementById('new-mod-id').value.trim();
+  const name=document.getElementById('new-mod-name').value.trim();
+  const version=document.getElementById('new-mod-version').value.trim();
+  const required=document.getElementById('new-mod-required').checked;
+  if(!id||!name){ toast('Mod ID and Name required','danger'); return; }
+  makeBackup(); mods.push({modId:id,name,version:version||'1.0.0',required}); renderMods();
+  document.getElementById('new-mod-id').value=''; document.getElementById('new-mod-name').value=''; document.getElementById('new-mod-version').value='';
+  document.getElementById('add-mod-panel').classList.remove('open');
+  toast('Mod "'+name+'" added','success');
+}
+
+function dragStart(e,idx){ dragSrc=idx; e.currentTarget.classList.add('dragging'); }
+function dragEnd(){ document.querySelectorAll('.mod-table tr').forEach(r=>r.classList.remove('dragging','drag-over')); }
+function dragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function dropMod(e,idx){ e.preventDefault(); if(dragSrc===idx) return; makeBackup(); const m=mods.splice(dragSrc,1)[0]; mods.splice(idx,0,m); renderMods(); toast('Mod order updated'); }
+function toggleChip(el){ el.classList.toggle('selected'); }
+
+// ─── IMPORT / EXPORT MODS ────────────────────────────────────────────────────
+function exportModList(){
+  if(!mods.length){ toast('No mods','danger'); return; }
+  const blob=new Blob([mods.map(m=>`${m.name} - v${m.version}`).join('\n')],{type:'text/plain'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=(currentFile||'server').replace(/\.json$/i,'')+'_mods.txt'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Mod list exported','success');
+}
+function exportModsJson(){
+  if(!mods.length){ toast('No mods','danger'); return; }
+  const blob=new Blob([JSON.stringify(mods,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=(currentFile||'server').replace(/\.json$/i,'')+'_mods.json'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Mods JSON exported','success');
+}
+function importModsFromFile(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const parsed=JSON.parse(e.target.result);
+      let importedMods=null;
+      if(Array.isArray(parsed)) importedMods=parsed;
+      else if(parsed.game&&Array.isArray(parsed.game.mods)) importedMods=parsed.game.mods;
+      else{ toast('No mods found in that file','danger'); event.target.value=''; return; }
+      if(!importedMods.length){ toast('Config has no mods','danger'); event.target.value=''; return; }
+      showImportModal(importedMods);
+    }catch(err){ toast('Invalid JSON: '+err.message,'danger'); }
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+function showImportModal(importedMods){
+  pendingImportMods=importedMods;
+  const existingIds=new Set(mods.map(m=>m.modId));
+  const newMods=importedMods.filter(m=>!existingIds.has(m.modId));
+  const dupes=importedMods.filter(m=>existingIds.has(m.modId));
+  document.getElementById('import-new-count').textContent=newMods.length;
+  document.getElementById('import-dupe-count').textContent=dupes.length;
+  document.getElementById('import-total-count').textContent=importedMods.length;
+  document.getElementById('import-preview-list').innerHTML=importedMods.map(m=>{
+    const isDupe=existingIds.has(m.modId);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;width:16px;color:${isDupe?'#e8a84b':'var(--success)'}">${isDupe?'~':'+'}</span>
+      <span style="flex:1;font-size:13px">${escHtml(m.name)}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent)">${escHtml(m.version||'')}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:${isDupe?'#e8a84b':'var(--text-muted)'}">${isDupe?'EXISTS':'NEW'}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('import-mods-modal').classList.add('open');
+}
+function confirmImport(mode){
+  makeBackup();
+  const existingIds=new Set(mods.map(m=>m.modId));
+  if(mode==='replace'){ mods=[...pendingImportMods]; toast('Mods replaced ('+mods.length+')','success'); }
+  else{ const n=pendingImportMods.filter(m=>!existingIds.has(m.modId)); mods=[...mods,...n]; toast(n.length+' mods merged','success'); }
+  renderMods(); document.getElementById('import-mods-modal').classList.remove('open'); pendingImportMods=[];
+}
+
+// ─── JSON PREVIEW ────────────────────────────────────────────────────────────
+function updateJsonPreview(){
+  document.getElementById('json-preview').innerHTML=syntaxHighlight(JSON.stringify(buildConfig(),null,2));
+}
+function syntaxHighlight(json){
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,match=>{
+      let cls='json-num';
+      if(/^"/.test(match)) cls=/:$/.test(match)?'json-key':'json-str';
+      else if(/true|false/.test(match)) cls='json-bool';
+      return `<span class="${cls}">${match}</span>`;
+    });
+}
+
+// ─── SAVE ────────────────────────────────────────────────────────────────────
+function saveConfig(){
+  makeBackup();
+  const blob=new Blob([JSON.stringify(buildConfig(),null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=currentFile||'server.json'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Exported: '+(currentFile||'server.json'),'success');
+}
+
+// ─── BACKUPS ─────────────────────────────────────────────────────────────────
+function makeBackup(){
+  const now=new Date();
+  backups.unshift({ts:now.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+now.toLocaleTimeString('en-US',{hour12:false}),cfg:JSON.parse(JSON.stringify(buildConfig()))});
+  if(backups.length>10) backups.pop();
+  const list=document.getElementById('backup-list');
+  list.innerHTML=backups.map((b,i)=>`<div class="backup-item" onclick="restoreBackup(${i})"><span class="bk-name">BACKUP ${backups.length-i}</span><span class="bk-time">${b.ts}</span></div>`).join('');
+}
+function restoreBackup(idx){ makeBackup(); populateForm(backups[idx+1]?.cfg||backups[idx].cfg); toast('Backup restored','success'); }
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function toast(msg,type=''){
+  const el=document.createElement('div'); el.className='toast '+type;
+  el.innerHTML=(type==='success'?'&#10003; ':type==='danger'?'&#10007; ':'&#9670; ')+msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); },2500);
+}
+
+// ─── VALIDATOR ───────────────────────────────────────────────────────────────
+function runValidator(){
+  const cfg=buildConfig(); valResults=[];
+  const pass=(title,desc,path)=>valResults.push({type:'pass',title,desc,path});
+  const warn=(title,desc,path)=>valResults.push({type:'warning',title,desc,path});
+  const err=(title,desc,path)=>valResults.push({type:'error',title,desc,path});
+  const ipRe=/^(\d{1,3}\.){3}\d{1,3}$/;
+  const isPort=p=>Number.isInteger(p)&&p>=1&&p<=65535;
+
+  // Network
+  if(!cfg.bindAddress) err('Bind Address Missing','bindAddress is required. Use 0.0.0.0 for all interfaces.','bindAddress');
+  else pass('Bind Address Set',cfg.bindAddress,'bindAddress');
+  if(!isPort(cfg.bindPort)) err('Invalid Bind Port','bindPort must be 1–65535. Got: '+cfg.bindPort,'bindPort');
+  else pass('Bind Port Valid','Port '+cfg.bindPort,'bindPort');
+  if(!cfg.publicAddress||!ipRe.test(cfg.publicAddress)) err('Public Address Invalid','publicAddress must be a valid public IPv4. Not 0.0.0.0.','publicAddress');
+  else pass('Public Address Valid',cfg.publicAddress,'publicAddress');
+  if(!isPort(cfg.publicPort)) err('Invalid Public Port','publicPort must be 1–65535.','publicPort');
+  else pass('Public Port Valid','Port '+cfg.publicPort,'publicPort');
+  if(cfg.a2s&&cfg.a2s.port===cfg.bindPort) warn('A2S Port = Bind Port','A2S port should differ from game bindPort.','a2s.port');
+  else if(cfg.a2s&&isPort(cfg.a2s.port)) pass('A2S Port Valid','A2S on port '+cfg.a2s.port,'a2s.port');
+
+  // RCON
+  if(cfg.rcon){
+    if(!cfg.rcon.password||cfg.rcon.password.length<3) warn('Weak RCON Password','RCON password missing or too short (< 3 chars).','rcon.password');
+    else pass('RCON Password Set','Password configured.','rcon.password');
+    if(cfg.rcon.port===cfg.bindPort) err('RCON Port = Bind Port','RCON port must differ from game bindPort.','rcon.port');
+    else if(isPort(cfg.rcon.port)) pass('RCON Port Valid','RCON on '+cfg.rcon.port,'rcon.port');
+  }
+
+  // Game
+  if(!cfg.game.name||!cfg.game.name.trim()) err('Server Name Empty','game.name is required.','game.name');
+  else if(cfg.game.name.length>100) warn('Server Name Too Long','Server name exceeds 100 characters.','game.name');
+  else pass('Server Name Set','"'+cfg.game.name+'"','game.name');
+
+  if(!cfg.game.scenarioId) err('Scenario ID Missing','scenarioId is required — server cannot start without it.','game.scenarioId');
+  else if(!/^\{[0-9A-Fa-f]{16}\}/.test(cfg.game.scenarioId)) warn('Scenario ID Format','Expected {16HEX}Path/Mission.conf — verify this is correct.','game.scenarioId');
+  else pass('Scenario ID Valid',cfg.game.scenarioId,'game.scenarioId');
+
+  if(!cfg.game.maxPlayers||cfg.game.maxPlayers<1) err('Max Players Invalid','maxPlayers must be at least 1.','game.maxPlayers');
+  else if(cfg.game.maxPlayers>128) warn('Max Players Very High',cfg.game.maxPlayers+' players — ensure hardware can support this.','game.maxPlayers');
+  else pass('Max Players Valid','Up to '+cfg.game.maxPlayers+' players','game.maxPlayers');
+
+  if(!cfg.game.passwordAdmin||!cfg.game.passwordAdmin.trim()) warn('No Admin Password','passwordAdmin not set — in-game admin access will be unavailable.','game.passwordAdmin');
+  else pass('Admin Password Set','Admin password configured.','game.passwordAdmin');
+
+  if(!cfg.game.supportedPlatforms||cfg.game.supportedPlatforms.length===0) warn('No Platforms Selected','No platforms selected — no players can join.','game.supportedPlatforms');
+  else pass('Platforms Set',cfg.game.supportedPlatforms.join(', '),'game.supportedPlatforms');
+
+  const gp=cfg.game.gameProperties;
+  if(gp.networkViewDistance>gp.serverMaxViewDistance) warn('Network View > Server View','networkViewDistance should not exceed serverMaxViewDistance.','gameProperties.networkViewDistance');
+  else pass('Network View Distance OK',gp.networkViewDistance+'m','gameProperties.networkViewDistance');
+  if(!gp.battlEye) warn('BattlEye Disabled','Anti-cheat is OFF. Recommended for public servers.','gameProperties.battlEye');
+  else pass('BattlEye Enabled','Anti-cheat active.','gameProperties.battlEye');
+  if(!gp.fastValidation) warn('Fast Validation Off','Slow validation can cause connection issues. Recommended: true.','gameProperties.fastValidation');
+  else pass('Fast Validation On','Client validation optimized.','gameProperties.fastValidation');
+
+  // Mods
+  const modIdRe=/^[0-9A-Fa-f]{16}$/;
+  const seenIds={};
+  mods.forEach((m,i)=>{
+    if(!modIdRe.test(m.modId)) err('Invalid Mod ID: '+m.name,'modId "'+m.modId+'" is not a valid 16-char hex ID.','game.mods['+i+'].modId');
+    if(seenIds[m.modId]) err('Duplicate Mod ID',''+m.modId+' appears more than once ('+seenIds[m.modId]+' & '+m.name+').','game.mods['+i+'].modId');
+    seenIds[m.modId]=m.name;
+  });
+  if(mods.length===0) pass('No Mods','Vanilla server.','game.mods');
+  else if(!Object.values(valResults).some(r=>r.type==='error'&&r.path.startsWith('game.mods'))) pass('Mod IDs Valid',mods.length+' mods, no duplicate/malformed IDs.','game.mods');
+  if(mods.length>50) warn('Large Mod List',mods.length+' mods — large lists increase client load times.','game.mods');
+
+  const errors=valResults.filter(r=>r.type==='error').length;
+  const warnings=valResults.filter(r=>r.type==='warning').length;
+  const passes=valResults.filter(r=>r.type==='pass').length;
+  document.getElementById('val-error-count').textContent=errors;
+  document.getElementById('val-warn-count').textContent=warnings;
+  document.getElementById('val-pass-count').textContent=passes;
+  document.getElementById('val-last-run').textContent='LAST RUN: '+new Date().toLocaleTimeString('en-US',{hour12:false});
+  const badge=document.getElementById('val-badge');
+  if(errors>0){ badge.textContent=errors+' ERR'; badge.style.display='inline'; badge.style.borderColor='var(--danger)'; badge.style.color='var(--danger)'; }
+  else if(warnings>0){ badge.textContent=warnings+' WARN'; badge.style.display='inline'; badge.style.borderColor='var(--warn)'; badge.style.color='var(--warn)'; }
+  else{ badge.textContent='OK'; badge.style.display='inline'; badge.style.borderColor='var(--success)'; badge.style.color='var(--success)'; }
+  renderValResults();
+  toast('Validation complete — '+(errors>0?errors+' error(s)':warnings>0?warnings+' warning(s)':'All passed!'),errors>0?'danger':warnings>0?'':' success');
+}
+
+function renderValResults(){
+  const filtered=valFilter==='all'?valResults:valResults.filter(r=>r.type===valFilter);
+  const icons={error:'&#10007;',warning:'!',pass:'&#10003;'};
+  document.getElementById('val-results').innerHTML=filtered.length
+    ?'<div class="val-result-list">'+filtered.map(r=>`<div class="val-item ${r.type}"><span class="val-icon">${icons[r.type]||'?'}</span><div class="val-text"><div class="val-title">${escHtml(r.title)}</div><div class="val-desc">${escHtml(r.desc)}</div></div><span class="val-path">${escHtml(r.path)}</span></div>`).join('')+'</div>'
+    :'<div class="val-empty">NO RESULTS FOR THIS FILTER</div>';
+}
+
+function setValFilter(f){
+  valFilter=f;
+  document.querySelectorAll('.val-filter').forEach(b=>b.classList.remove('active'));
+  document.getElementById('vf-'+f).classList.add('active');
+  if(valResults.length) renderValResults();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// SCENARIO BROWSER
+// ═══════════════════════════════════════════════════════════════
+const SCENARIOS = [
+  // ── Conflict ──
+  { name:"Conflict — Everon", id:"{ECC61978EDCC2B5A}Missions/23_Campaign.conf", map:"Everon", modes:["pvp"], tags:["pvp","official"], desc:"The flagship 40-player PvP mode. Two factions fight for radio towers across Everon. Vehicles, logistics, and dynamic frontlines." },
+  { name:"Conflict — Arland", id:"{2BBBE828037C6F4B}Missions/23_Campaign.conf", map:"Arland", modes:["pvp"], tags:["pvp","official"], desc:"Conflict on the smaller, tighter Arland island. Fast-paced with closer engagements." },
+  { name:"Conflict — Sattahip", id:"{9693432B5BC6E89C}Missions/23_Campaign.conf", map:"Sattahip", modes:["pvp"], tags:["pvp","official"], desc:"Conflict on the tropical Sattahip terrain — dense jungle engagements." },
+  // ── Combined Arms ──
+  { name:"Combined Arms — Everon", id:"{BB3A14A4FFFCF9B8}Missions/24_CombinedArms.conf", map:"Everon", modes:["coop"], tags:["coop","official"], desc:"Large-scale PvE co-op. Human players cooperate against AI-controlled enemy forces with full vehicle support." },
+  { name:"Combined Arms — Arland", id:"{70A315D559E47F28}Missions/24_CombinedArms.conf", map:"Arland", modes:["coop"], tags:["coop","official"], desc:"Combined Arms on Arland — tighter terrain means more infantry-focused PvE gameplay." },
+  // ── Campaign ──
+  { name:"Campaign — Everon", id:"{ECC61978EDCC2B5A}Missions/23_Campaign.conf", map:"Everon", modes:["coop"], tags:["coop","official","story"], desc:"Story-driven single/co-op campaign set on Everon. Recommended for 1-4 players." },
+  // ── Game Master ──
+  { name:"Game Master — Everon", id:"{59AD59368755F41A}Missions/21_GM_Eden.conf", map:"Everon", modes:["sandbox","gamemaster"], tags:["sandbox","gamemaster","official"], desc:"Sandbox GM mode on Everon. One player acts as Game Master in real-time, controlling AI and events for others." },
+  { name:"Game Master — Arland", id:"{2BBBE828037C6F4B}Missions/21_GM_Eden.conf", map:"Arland", modes:["sandbox","gamemaster"], tags:["sandbox","gamemaster","official"], desc:"Game Master sandbox on the Arland island terrain." },
+  { name:"Game Master — Sattahip", id:"{9693432B5BC6E89C}Missions/21_GM_Eden.conf", map:"Sattahip", modes:["sandbox","gamemaster"], tags:["sandbox","gamemaster","official"], desc:"Game Master on the Sattahip tropical terrain." },
+  // ── Showcase ──
+  { name:"Showcase — Combat Ops", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_CombatOps.conf", map:"Everon", modes:["coop"], tags:["coop","official","showcase"], desc:"Linear showcase co-op mission demonstrating combat operations gameplay on Everon." },
+  { name:"Showcase — Helicopters", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_Helicopters.conf", map:"Everon", modes:["coop"], tags:["coop","official","showcase"], desc:"Helicopter showcase mission highlighting aircraft gameplay mechanics." },
+  { name:"Showcase — Vehicles", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_Vehicles.conf", map:"Everon", modes:["coop"], tags:["coop","official","showcase"], desc:"Vehicle showcase demonstrating ground vehicle mechanics and combined arms." },
+  { name:"Showcase — Arsenal", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_Arsenal.conf", map:"Everon", modes:["sandbox"], tags:["sandbox","official","showcase"], desc:"Arsenal showcase — access all weapons and gear for testing." },
+];
+
+let scenarioCatFilter = 'all';
+let recentScenarios = JSON.parse(localStorage.getItem('reforger_recent_scenarios') || '[]');
+
+function saveRecentScenario(id, name) {
+  // Remove if already exists
+  recentScenarios = recentScenarios.filter(r => r.id !== id);
+  // Add to front
+  recentScenarios.unshift({ id, name, ts: Date.now() });
+  // Keep max 8
+  if(recentScenarios.length > 8) recentScenarios = recentScenarios.slice(0, 8);
+  try { localStorage.setItem('reforger_recent_scenarios', JSON.stringify(recentScenarios)); } catch(e) {}
+  renderRecentScenarios();
+}
+
+function clearRecentScenarios() {
+  recentScenarios = [];
+  try { localStorage.removeItem('reforger_recent_scenarios'); } catch(e) {}
+  renderRecentScenarios();
+}
+
+function renderRecentScenarios() {
+  const section = document.getElementById('recent-scenarios-section');
+  const container = document.getElementById('recent-scenarios-chips');
+  if(!section || !container) return;
+
+  if(!recentScenarios.length) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  const currentId = document.getElementById('gameScenarioId')?.value?.trim() || '';
+
+  container.innerHTML = recentScenarios.map((r, i) => {
+    const isActive = r.id === currentId;
+    return `<div class="recent-chip ${isActive ? 'active-scenario' : ''}" onclick="applyScenario('${escHtml(r.id)}', '${escHtml(r.name).replace(/'/g,"\'")}')">
+      <span class="recent-chip-name">${escHtml(r.name)}</span>
+      <span class="recent-chip-id">${escHtml(r.id)}</span>
+    </div>`;
+  }).join('') + `<button class="recent-chip-clear" onclick="clearRecentScenarios()" title="Clear recently used">CLEAR</button>`;
+}
+
+function initScenarioBrowser() {
+  renderRecentScenarios();
+  renderScenarios();
+  updateScenarioCurrentDisplay();
+}
+
+function renderScenarios() {
+  const search = (document.getElementById('scenario-search')?.value || '').toLowerCase();
+  const grid = document.getElementById('scenario-grid');
+  const currentId = document.getElementById('gameScenarioId')?.value?.trim() || '';
+  const filtered = SCENARIOS.filter(s => {
+    const matchCat = scenarioCatFilter === 'all' || s.modes.includes(scenarioCatFilter) || s.tags.includes(scenarioCatFilter);
+    const matchSearch = !search || s.name.toLowerCase().includes(search) || s.map.toLowerCase().includes(search) || s.id.toLowerCase().includes(search) || s.desc.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+
+  grid.innerHTML = filtered.length ? filtered.map(s => {
+    const isActive = s.id === currentId;
+    const tagHtml = s.tags.map(t => {
+      let cls = '';
+      if(t === 'pvp') cls = 'pvp';
+      else if(t === 'coop') cls = 'coop';
+      else if(t === 'sandbox' || t === 'gamemaster') cls = 'sandbox';
+      return `<span class="scenario-tag ${cls}">${t.toUpperCase()}</span>`;
+    }).join('');
+    return `<div class="scenario-card ${isActive ? 'active-scenario' : ''}" onclick="applyScenario('${escHtml(s.id)}', '${escHtml(s.name)}')">
+      <div class="scenario-name">${escHtml(s.name)}</div>
+      <div style="font-size:11px;color:var(--text-muted);font-family:'Share Tech Mono',monospace;margin-bottom:6px;">MAP: ${s.map}</div>
+      <div class="scenario-desc">${escHtml(s.desc)}</div>
+      <div>${tagHtml}</div>
+      <div class="scenario-id">${escHtml(s.id)}</div>
+    </div>`;
+  }).join('') : '<div style="grid-column:1/-1;text-align:center;padding:32px;font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--text-muted);letter-spacing:2px;">NO SCENARIOS MATCH YOUR FILTER</div>';
+}
+
+function applyScenario(id, name) {
+  makeBackup();
+  document.getElementById('gameScenarioId').value = id;
+  saveRecentScenario(id, name);
+  updateScenarioCurrentDisplay();
+  renderScenarios();
+  toast('Scenario set: ' + name, 'success');
+}
+
+function applyCustomScenario() {
+  const val = document.getElementById('custom-scenario-input').value.trim();
+  if(!val) { toast('Enter a scenario ID first', 'danger'); return; }
+  makeBackup();
+  document.getElementById('gameScenarioId').value = val;
+  // Try to match a known scenario name, otherwise label as custom
+  const known = SCENARIOS.find(s => s.id === val);
+  saveRecentScenario(val, known ? known.name : 'Custom: ' + val.substring(0, 24) + (val.length > 24 ? '...' : ''));
+  document.getElementById('custom-scenario-input').value = '';
+  updateScenarioCurrentDisplay();
+  renderScenarios();
+  toast('Custom scenario ID applied', 'success');
+}
+
+function updateScenarioCurrentDisplay() {
+  const id = document.getElementById('gameScenarioId')?.value?.trim() || '';
+  const el = document.getElementById('scenario-current-display');
+  if(!el) return;
+  const known = SCENARIOS.find(s => s.id === id);
+  el.textContent = id ? (known ? known.name + ' — ' + id : id) : '— none —';
+}
+
+function filterScenarios() { renderScenarios(); }
+
+function setScenarioCat(el) {
+  scenarioCatFilter = el.dataset.cat;
+  document.querySelectorAll('#scenario-cat-filter .wk-cat').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderScenarios();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// OPTION A — AI MOD SEARCH
+// ═══════════════════════════════════════════════════════════════
+// ─── API KEY MANAGEMENT ──────────────────────────────────────────────────────
+function loadApiKey() {
+  try { return localStorage.getItem('reforger_anthropic_key') || ''; } catch(e) { return ''; }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('anthropic-api-key-input').value.trim();
+  if(!key || !key.startsWith('sk-')) { toast('Enter a valid Anthropic API key (starts with sk-)', 'danger'); return; }
+  try {
+    localStorage.setItem('reforger_anthropic_key', key);
+    document.getElementById('api-key-saved-indicator').style.display = 'block';
+    document.getElementById('anthropic-api-key-input').value = '';
+    updateApiKeyBadge();
+    toast('API key saved', 'success');
+  } catch(e) { toast('Could not save key: ' + e.message, 'danger'); }
+}
+
+function clearApiKey() {
+  try { localStorage.removeItem('reforger_anthropic_key'); } catch(e) {}
+  document.getElementById('anthropic-api-key-input').value = '';
+  document.getElementById('api-key-saved-indicator').style.display = 'none';
+  updateApiKeyBadge();
+  toast('API key cleared', 'success');
+}
+
+function updateApiKeyBadge() {
+  const key = loadApiKey();
+  const badge = document.getElementById('ai-key-status-badge');
+  const msg = document.getElementById('ai-key-required-msg');
+  const searchBtn = document.getElementById('ai-search-btn');
+  if(!badge) return;
+  if(key) {
+    badge.textContent = 'KEY SET ✓';
+    badge.style.borderColor = 'var(--success)';
+    badge.style.color = 'var(--success)';
+    if(msg) msg.style.display = 'none';
+    if(searchBtn) searchBtn.disabled = false;
+  } else {
+    badge.textContent = 'NO KEY';
+    badge.style.borderColor = 'var(--border)';
+    badge.style.color = 'var(--text-muted)';
+    if(msg) msg.style.display = 'block';
+    if(searchBtn) searchBtn.disabled = true;
+  }
+}
+
+function toggleApiKeyPanel() {
+  const panel = document.getElementById('api-key-panel');
+  const btn = document.getElementById('api-key-toggle-btn');
+  if(!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? 'SET API KEY' : 'HIDE';
+  if(!isOpen) document.getElementById('anthropic-api-key-input').focus();
+}
+
+async function searchModsAI() {
+  const query = document.getElementById('ai-mod-query').value.trim();
+  if(!query) { toast('Enter a search query first', 'danger'); return; }
+
+  const btn = document.getElementById('ai-search-btn');
+  const resultsEl = document.getElementById('ai-search-results');
+  btn.disabled = true;
+  btn.textContent = 'SEARCHING...';
+  resultsEl.innerHTML = '<div class="ai-thinking">ASKING CLAUDE FOR MODS</div>';
+
+  const existingIds = new Set(mods.map(m => m.modId));
+
+  try {
+    const apiKey = loadApiKey();
+    if(!apiKey) {
+      resultsEl.innerHTML = '<div style="padding:16px;font-family:Share Tech Mono,monospace;font-size:11px;color:var(--warn);">No API key set. Click SET API KEY above to add your Anthropic key.</div>';
+      btn.disabled = false; btn.textContent = '▶ SEARCH'; return;
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-ipc': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `You are an Arma Reforger Workshop mod database. The user searches for mods and you return matching results from your knowledge of the Reforger Workshop.
+
+Return ONLY a JSON array of mod objects. No markdown, no explanation, no backticks. Just a raw JSON array.
+
+Each object must have exactly these fields:
+- modId: string (16-character hex Workshop ID, e.g. "5965550F24A0C152")
+- name: string (exact mod name)
+- version: string (latest known version, e.g. "1.2.0")
+- author: string
+- category: string (one of: weapons, vehicles, maps, gameplay, ui, framework, military, other)
+- description: string (1-2 sentences)
+- workshopUrl: string (https://reforger.armaplatform.com/workshop/MODID)
+
+Return 6-10 results. Only include mods you are confident exist on the Reforger Workshop with correct modIds. If you are not certain of the exact modId, omit that mod. Do not invent modIds.`,
+        messages: [{ role: 'user', content: `Find Arma Reforger Workshop mods matching: "${query}"` }]
+      })
+    });
+
+    const data = await response.json();
+    const text = (data.content || []).map(c => c.text || '').join('');
+
+    let results;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      results = JSON.parse(clean);
+      if(!Array.isArray(results)) throw new Error('Not an array');
+    } catch(e) {
+      resultsEl.innerHTML = `<div style="padding:16px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--danger);">Could not parse results. Try rephrasing your search.</div>`;
+      return;
+    }
+
+    if(!results.length) {
+      resultsEl.innerHTML = `<div class="wk-loading">No mods found for that query. Try different keywords.</div>`;
+      return;
+    }
+
+    resultsEl.innerHTML = `
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:12px;letter-spacing:1px;">
+        &#9733; ${results.length} RESULTS FROM CLAUDE — Verify mod IDs before deploying to production
+      </div>
+      <div class="workshop-grid">
+        ${results.map(m => {
+          const inList = existingIds.has(m.modId);
+          const catColor = {weapons:'#e8a84b',vehicles:'#7ec8e3',maps:'#98d49a',gameplay:'#c792ea',military:'#e84b4b',framework:'#c8a84b',ui:'#4bc86e'}[m.category] || 'var(--text-muted)';
+          return `<div class="ai-result-card ${inList ? 'in-list' : ''}">
+            <div class="wk-name">${escHtml(m.name)}</div>
+            <div class="wk-author">by ${escHtml(m.author)} &nbsp;·&nbsp; v${escHtml(m.version||'?')}</div>
+            <div style="margin-bottom:8px"><span class="wk-tag" style="border-color:${catColor};color:${catColor}">${escHtml(m.category)}</span></div>
+            <div class="wk-desc">${escHtml(m.description||'')}</div>
+            <div class="wk-footer">
+              <span class="wk-id">${escHtml(m.modId)}</span>
+              <div style="display:flex;gap:6px">
+                <a href="${escHtml(m.workshopUrl||'https://reforger.armaplatform.com/workshop/'+m.modId)}" target="_blank" class="btn btn-sm" style="text-decoration:none;padding:4px 10px;font-size:10px">&#128279;</a>
+                ${inList
+                  ? `<button class="btn btn-sm btn-danger" onclick="removeWorkshopMod('${escHtml(m.modId)}')">REMOVE</button>`
+                  : `<button class="btn btn-sm btn-success" onclick="addWorkshopMod('${escHtml(m.modId)}','${escHtml(m.name).replace(/'/g,"\\'")}','${escHtml(m.version||'1.0.0')}')">+ ADD</button>`
+                }
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+  } catch(err) {
+    resultsEl.innerHTML = `<div style="padding:16px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--danger);">Search failed: ${escHtml(err.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ SEARCH';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OPTION B — WORKSHOP URL IMPORT
+// ═══════════════════════════════════════════════════════════════
+function extractModIdFromInput(val) {
+  // Full URL: https://reforger.armaplatform.com/workshop/XXXXXXXXXXXXXXXX
+  // or https://reforger.armaplatform.com/workshop/XXXXXXXXXXXXXXXX-mod-name
+  const urlMatch = val.match(/workshop\/([0-9A-Fa-f]{16})/i);
+  if(urlMatch) return urlMatch[1].toUpperCase();
+  // Raw 16-char hex ID
+  const hexMatch = val.match(/^[0-9A-Fa-f]{16}$/i);
+  if(hexMatch) return val.toUpperCase();
+  return null;
+}
+
+function previewUrlImport() {
+  const val = document.getElementById('url-import-input').value.trim();
+  const preview = document.getElementById('url-import-preview');
+  if(!val) { preview.innerHTML = ''; return; }
+
+  const modId = extractModIdFromInput(val);
+  if(!modId) {
+    preview.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);">Paste a full Workshop URL or a 16-character hex mod ID</div>`;
+    return;
+  }
+
+  const inList = mods.find(m => m.modId === modId);
+  const known = WORKSHOP_MODS.find(m => m.modId === modId);
+  preview.innerHTML = `<div class="url-preview">
+    <span style="color:var(--success)">&#10003;</span>
+    <span class="mod-id">${modId}</span>
+    ${known ? `<span style="color:var(--text)">${escHtml(known.name)}</span>` : `<span style="color:var(--text-muted)">Unknown mod — will be added with ID only, edit name after</span>`}
+    ${inList ? `<span style="color:var(--warn);margin-left:auto">Already in config</span>` : ''}
+  </div>`;
+}
+
+function importFromUrl() {
+  const val = document.getElementById('url-import-input').value.trim();
+  const modId = extractModIdFromInput(val);
+  if(!modId) { toast('Could not extract a valid mod ID', 'danger'); return; }
+
+  if(mods.find(m => m.modId === modId)) { toast('Mod already in config', 'danger'); return; }
+
+  const known = WORKSHOP_MODS.find(m => m.modId === modId);
+  const name = known ? known.name : 'Mod ' + modId;
+  const version = known ? known.version : '1.0.0';
+
+  makeBackup();
+  mods.push({ modId, name, version, required: true });
+  renderMods();
+  renderWorkshop();
+  updateWkInListCount();
+
+  document.getElementById('url-import-input').value = '';
+  document.getElementById('url-import-preview').innerHTML = '';
+  toast('"' + name + '" added to config', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OPTION C — IN-GAME EXPORT IMPORT
+// ═══════════════════════════════════════════════════════════════
+function importIngameExport(event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      processIngameExport(JSON.parse(e.target.result), file.name);
+    } catch(err) {
+      toast('Invalid JSON: ' + err.message, 'danger');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function importIngamePaste() {
+  const txt = document.getElementById('ingame-paste-json').value.trim();
+  if(!txt) { toast('Paste some JSON first', 'danger'); return; }
+  try {
+    processIngameExport(JSON.parse(txt), 'pasted');
+    document.getElementById('ingame-paste-json').value = '';
+    document.getElementById('paste-ingame-panel').style.display = 'none';
+  } catch(err) {
+    toast('Invalid JSON: ' + err.message, 'danger');
+  }
+}
+
+function processIngameExport(parsed, sourceName) {
+  // In-game export formats:
+  // 1. Array of mod objects: [{modId, name, version?, required?}]
+  // 2. Full server config with game.mods
+  // 3. Object with a "mods" key
+  // 4. Object with a "Mods" key (some versions)
+  let importedMods = null;
+
+  if(Array.isArray(parsed)) {
+    importedMods = parsed;
+  } else if(parsed.game && Array.isArray(parsed.game.mods)) {
+    importedMods = parsed.game.mods;
+  } else if(Array.isArray(parsed.mods)) {
+    importedMods = parsed.mods;
+  } else if(Array.isArray(parsed.Mods)) {
+    importedMods = parsed.Mods;
+  }
+
+  if(!importedMods) {
+    toast('Could not find a mod list in that file', 'danger');
+    return;
+  }
+
+  // Normalize fields — in-game export uses modId or id
+  importedMods = importedMods.map(m => ({
+    modId: (m.modId || m.id || m.ModId || m.ID || '').toUpperCase(),
+    name: m.name || m.Name || m.modId || 'Unknown',
+    version: m.version || m.Version || '1.0.0',
+    required: m.required !== false
+  })).filter(m => /^[0-9A-Fa-f]{16}$/i.test(m.modId));
+
+  if(!importedMods.length) {
+    toast('No valid mods found in that file', 'danger');
+    return;
+  }
+
+  const existingIds = new Set(mods.map(m => m.modId));
+  const newMods = importedMods.filter(m => !existingIds.has(m.modId));
+  const dupeCount = importedMods.length - newMods.length;
+
+  // Show preview
+  const preview = document.getElementById('ingame-import-preview');
+  preview.innerHTML = `
+    <div style="background:var(--highlight);border:1px solid var(--border-bright);padding:16px;margin-top:4px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--accent);margin-bottom:12px">IMPORT PREVIEW — ${escHtml(sourceName)}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div style="text-align:center">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--text)">${importedMods.length}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim)">TOTAL</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--success)">${newMods.length}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim)">NEW</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--warn)">${dupeCount}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim)">ALREADY HAVE</div>
+        </div>
+      </div>
+      <div style="max-height:200px;overflow-y:auto;margin-bottom:12px;font-family:'Share Tech Mono',monospace;font-size:11px">
+      ${importedMods.slice(0,20).map(m => {
+          const isDupe = existingIds.has(m.modId);
+          const dc = isDupe ? 'color:var(--warn)' : 'color:var(--success)';
+          const ch = isDupe ? '~' : '+';
+          return '<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border)">'
+            + '<span style="' + dc + ';width:12px">' + ch + '</span>'
+            + '<span style="flex:1">' + escHtml(m.name) + '</span>'
+            + '<span style="color:var(--accent)">' + escHtml(m.version) + '</span>'
+            + '</div>';
+        }).join('')}
+        ${importedMods.length > 20 ? `<div style="color:var(--text-muted);padding:6px 0">...and ${importedMods.length-20} more</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-sm" onclick="document.getElementById('ingame-import-preview').innerHTML=''">CANCEL</button>
+        <button class="btn btn-sm" onclick="confirmIngameImport(${JSON.stringify(JSON.stringify(importedMods))},'merge')">MERGE NEW ONLY (${newMods.length})</button>
+        <button class="btn btn-sm btn-primary" onclick="confirmIngameImport(${JSON.stringify(JSON.stringify(importedMods))},'replace')">REPLACE ALL (${importedMods.length})</button>
+      </div>
+    </div>`;
+
+  document.getElementById('ingame-import-status').textContent = importedMods.length + ' mods found';
+}
+
+function confirmIngameImport(modsJson, mode) {
+  const importedMods = JSON.parse(modsJson);
+  makeBackup();
+  if(mode === 'replace') {
+    mods = importedMods;
+    toast('Mod list replaced with ' + mods.length + ' mods from export', 'success');
+  } else {
+    const existingIds = new Set(mods.map(m => m.modId));
+    const newOnes = importedMods.filter(m => !existingIds.has(m.modId));
+    mods = [...mods, ...newOnes];
+    toast(newOnes.length + ' new mods merged from in-game export', 'success');
+  }
+  renderMods();
+  renderWorkshop();
+  updateWkInListCount();
+  document.getElementById('ingame-import-preview').innerHTML = '';
+  document.getElementById('ingame-import-status').textContent = mods.length + ' mods in config';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WORKSHOP BROWSER (CURATED)
+// ═══════════════════════════════════════════════════════════════
+const WORKSHOP_MODS = [
+  // ── FRAMEWORKS ──────────────────────────────────────────────────
+  { modId:"5D6EA74A94173EDF", name:"Enfusion Database Framework", author:"Enfusion Community", version:"0.6.9", cat:"framework", desc:"Core database abstraction layer required by many persistence and data mods. Load before any mod that depends on it.", tags:["framework","dependency","database"] },
+  { modId:"5D6EBC81EB1842EF", name:"Enfusion Persistence Framework", author:"Enfusion Community", version:"0.6.17", cat:"framework", desc:"Player and world state persistence. Required by most mods that save data across sessions.", tags:["framework","dependency","persistence"] },
+  { modId:"62CCD69DD17E4F2F", name:"AKI Core", author:"AKI Team", version:"6.0.5", cat:"framework", desc:"Core framework for the AKI mod ecosystem. Required by WCS and many vehicle mods.", tags:["framework","dependency","aki"] },
+  { modId:"6556458885927F2F", name:"Mike's I&A Framework", author:"Mike", version:"0.9.2", cat:"framework", desc:"Invade & Annex objective framework. The backbone for creating dynamic co-op missions with rotating objectives.", tags:["framework","coop","mission","ia"] },
+  { modId:"687CD82F6E41D627", name:"Attachment Framework Core", author:"Community", version:"1.0.0", cat:"framework", desc:"Core framework enabling custom weapon attachment systems for modded weapons.", tags:["framework","dependency","weapons","attachments"] },
+  { modId:"632F64CB7D65D1FC", name:"TraceVeh Core", author:"Trace", version:"1.0.58", cat:"framework", desc:"Vehicle framework enabling advanced systems used by many modded vehicle packs.", tags:["framework","dependency","vehicles"] },
+  { modId:"64EE818E08AFCF94", name:"MFD Framework", author:"Community", version:"0.4.2", cat:"framework", desc:"Multi-Function Display framework adding advanced cockpit instrument panels to aircraft and vehicles.", tags:["framework","vehicles","aircraft","ui"] },
+  { modId:"5E9B6EAC2E1C1B40", name:"EL Core", author:"EL Team", version:"1.3.0", cat:"framework", desc:"Entity Lifecycle Core framework. Dependency for EL ecosystem mods handling entity spawn/despawn management.", tags:["framework","dependency"] },
+  { modId:"5F02B5A6C0C04980", name:"Greenfox Framework", author:"Greenfox", version:"2.1.4", cat:"framework", desc:"Lightweight scripting utility framework used by various small gameplay mods.", tags:["framework","dependency","scripting"] },
+  { modId:"6154E1A0B0D34729", name:"DayZ-Inspired Loot Framework", author:"Community", version:"0.3.8", cat:"framework", desc:"Loot spawning and persistence framework inspired by DayZ mechanics.", tags:["framework","survival","loot"] },
+  { modId:"60F4C3B2E1A09D57", name:"JIP Framework", author:"Community", version:"1.1.2", cat:"framework", desc:"Join-in-Progress framework ensuring late-joining players sync correctly with ongoing sessions.", tags:["framework","multiplayer","jip"] },
+
+  // ── UI / TOOLS / ADMIN ───────────────────────────────────────────
+  { modId:"5965550F24A0C152", name:"Where Am I", author:"Community", version:"1.2.0", cat:"ui", desc:"Displays your current grid coordinates on-screen. Essential navigation aid for mil-sim and large-map servers.", tags:["ui","navigation","coordinates"] },
+  { modId:"5AAAC70D754245DD", name:"Server Admin Tools", author:"Community", version:"1.6.2", cat:"ui", desc:"Comprehensive in-game admin panel. Player management, teleport, spectate, kick, ban, and server restart.", tags:["ui","admin","tools","management"] },
+  { modId:"606B100247F5C709", name:"Bacon Loadout Editor", author:"Bacon", version:"1.6.1", cat:"ui", desc:"In-game loadout editor letting players equip gear directly from the arsenal without game master.", tags:["ui","gameplay","loadout"] },
+  { modId:"64F869693699EEA7", name:"Identity & Character Selector", author:"Community", version:"1.0.12", cat:"ui", desc:"Allows players to customise character identity and appearance in a lobby selector before spawning.", tags:["ui","character","identity"] },
+  { modId:"5C5F4A2D8B3E9041", name:"Tactical Map", author:"Community", version:"1.4.7", cat:"ui", desc:"Enhanced map with markers, draw tools, shared annotations and grid overlays for coordinated ops.", tags:["ui","map","navigation","tactical"] },
+  { modId:"5F8A3C1D9E4B2076", name:"Better Inventory", author:"Community", version:"2.0.3", cat:"ui", desc:"Improved inventory UI with sorting, weight display, quick-transfer, and container management.", tags:["ui","inventory","qol"] },
+  { modId:"61A5E3F0D7C28B94", name:"Advanced Chat System", author:"Community", version:"1.2.1", cat:"ui", desc:"Extended in-game chat with team/side/global channels, timestamps, and message history.", tags:["ui","communication","chat"] },
+  { modId:"5E3D9B6C2A4F1857", name:"Scoreboard Enhanced", author:"Community", version:"1.0.9", cat:"ui", desc:"Improved scoreboard showing kills, deaths, assists, playtime, and faction breakdown.", tags:["ui","hud","scoreboard"] },
+  { modId:"62D7F4A1B8E35C09", name:"Kill Feed", author:"Community", version:"0.8.4", cat:"ui", desc:"Compact kill notifications in the corner showing who eliminated whom and with what weapon.", tags:["ui","hud","kills"] },
+  { modId:"5A9C6E3D1F2B8047", name:"Custom Spawn Points", author:"Community", version:"1.3.5", cat:"ui", desc:"Allows admins to place and name custom spawn points on the map for players to choose at respawn.", tags:["ui","admin","spawning"] },
+  { modId:"60B2E7F3C5D1A948", name:"Player Counter HUD", author:"Community", version:"1.0.3", cat:"ui", desc:"Always-visible player count overlay showing online players, slots, and faction breakdown.", tags:["ui","hud","players"] },
+  { modId:"5964E0B3BB7410CE", name:"Game Master Enhanced", author:"Community", version:"1.3.5", cat:"ui", desc:"Extends the built-in Game Master with additional tools: more AI controls, weather, teleport, spawning.", tags:["ui","gamemaster","admin","tools"] },
+  { modId:"5F2944B7474F043F", name:"Disable Game Master Budgets", author:"Community", version:"1.0.5", cat:"ui", desc:"Removes the entity budget cap from Game Master mode so admins can spawn unlimited units.", tags:["ui","gamemaster","admin"] },
+  { modId:"63B1F4E8D2A09C57", name:"Debug Console Unlock", author:"Community", version:"1.0.1", cat:"ui", desc:"Unlocks the Enfusion debug console for server-side scripting and diagnostics.", tags:["ui","admin","debug","scripting"] },
+  { modId:"65B2D7A4C1E38F09", name:"Server Message System", author:"Community", version:"1.1.7", cat:"ui", desc:"Scheduled and triggered server announcements with custom formatting and player notifications.", tags:["ui","admin","communication"] },
+
+  // ── GAMEPLAY / MECHANICS ─────────────────────────────────────────
+  { modId:"60C4CE4888FF4621", name:"ACE Core", author:"ACE Team", version:"1.4.1", cat:"gameplay", desc:"Advanced Combat Environment — medical, interaction, explosives, and realism overhaul. The de-facto mil-sim standard.", tags:["gameplay","realism","ace","medical","dependency"] },
+  { modId:"60E573C9B04CC408", name:"ACE Backblast", author:"ACE Team", version:"1.4.1", cat:"gameplay", desc:"Realistic rocket and recoilless rifle backblast — auditory and lethal danger zones behind launchers.", tags:["gameplay","realism","ace","weapons"] },
+  { modId:"5DBD560C5148E1DA", name:"ACE Carrying", author:"ACE Team", version:"1.4.1", cat:"gameplay", desc:"Carry and drag wounded teammates to cover and medical points.", tags:["gameplay","medical","ace","coop"] },
+  { modId:"60EAEA0389DB3CC2", name:"ACE Trenches", author:"ACE Team", version:"1.4.1", cat:"gameplay", desc:"Deployable entrenchment tools — dig foxholes, fighting positions, and trenches in the field.", tags:["gameplay","construction","ace","fortification"] },
+  { modId:"606C369BAC3F6CC3", name:"ACE Finger", author:"ACE Team", version:"1.4.2", cat:"gameplay", desc:"Point-gesture system for directing teammates and marking positions on the map.", tags:["gameplay","communication","ace","coordination"] },
+  { modId:"5EB744C5F42E0800", name:"ACE Chopping", author:"ACE Team", version:"1.4.1", cat:"gameplay", desc:"Chop down trees to create cover, obstacles, or firewood. Adds environmental interaction.", tags:["gameplay","environment","ace"] },
+  { modId:"5C9758250C8C56F1", name:"Bon Action Animations", author:"Bon", version:"1.0.1", cat:"gameplay", desc:"Enhanced character animations adding prone transitions, weapon raises, and movement polish.", tags:["gameplay","animations","immersion"] },
+  { modId:"5E7B3D2F1A9C4068", name:"Advanced Medical System", author:"Community", version:"2.3.1", cat:"gameplay", desc:"Detailed wound system with bleeding, fractures, concussions, CPR, IVs, and surgical tools.", tags:["gameplay","medical","realism","milsim"] },
+  { modId:"61C4F8E3B5D2A907", name:"Stamina Overhaul", author:"Community", version:"1.1.4", cat:"gameplay", desc:"Reworked stamina and fatigue system with weight-dependent movement penalty and recovery.", tags:["gameplay","realism","movement"] },
+  { modId:"5F9A7E4D2C3B1086", name:"Realistic Night Vision", author:"Community", version:"1.0.7", cat:"gameplay", desc:"Overhauled NVG with bloom, grain, limited FOV, and battery drain for authentic night ops.", tags:["gameplay","realism","nvg","night"] },
+  { modId:"62E8B3A1F5C4D097", name:"Advanced Roping System", author:"Community", version:"1.2.0", cat:"gameplay", desc:"Fast-rope from helicopters, rappel from buildings, and rope bridges for vertical assault operations.", tags:["gameplay","vehicles","aircraft","insertion"] },
+  { modId:"5A4D8C9E3F2B6071", name:"Fortification System", author:"Community", version:"2.1.8", cat:"gameplay", desc:"Build sandbags, wire obstacles, guard towers, and field fortifications collaboratively.", tags:["gameplay","construction","fortification","coop"] },
+  { modId:"60D3E9F2B7A14C58", name:"Prisoner System", author:"Community", version:"1.0.4", cat:"gameplay", desc:"Capture, restrain, and escort enemy players as prisoners of war.", tags:["gameplay","pvp","milsim"] },
+  { modId:"5B6E2A7D4F3C9018", name:"Realistic Cooking", author:"Community", version:"1.1.2", cat:"gameplay", desc:"Field cooking mechanics — prepare food at campfires for stamina and health bonuses.", tags:["gameplay","survival","food"] },
+  { modId:"63F5D1C8A9E4B072", name:"Dynamic Weather Enhanced", author:"Community", version:"1.3.6", cat:"gameplay", desc:"Extended weather system with fog banks, thunderstorms, seasonal changes, and wind effects.", tags:["gameplay","environment","weather","immersion"] },
+  { modId:"5C8F7B3E2D1A9064", name:"Parachute System", author:"Community", version:"1.2.3", cat:"gameplay", desc:"HALO/HAHO parachute insertion with steerable chute, altimeter, and oxygen system.", tags:["gameplay","insertion","airborne"] },
+  { modId:"62A9F3D7B5E21C08", name:"Vehicle Repair System", author:"Community", version:"1.0.9", cat:"gameplay", desc:"Detailed vehicle repair with component damage, spare parts, and tool requirements.", tags:["gameplay","vehicles","repair","realism"] },
+  { modId:"5D7C4A9F1B3E2086", name:"Logistics System", author:"Community", version:"2.0.4", cat:"gameplay", desc:"Supply chain framework — ammo crates, fuel trucks, supply drops, and requisition system.", tags:["gameplay","logistics","coop","milsim"] },
+  { modId:"61B8E7A5F3D2C049", name:"Field Artillery System", author:"Community", version:"1.1.7", cat:"gameplay", desc:"Fire missions, FDC calculations, and indirect fire support coordination for artillery crews.", tags:["gameplay","weapons","military","milsim"] },
+  { modId:"5E1D9C8B4F3A7026", name:"IED & Explosive Traps", author:"Community", version:"1.0.6", cat:"gameplay", desc:"Place and trigger IEDs, tripwires, and booby traps. Includes detection and disarm mechanics.", tags:["gameplay","weapons","asymmetric","combat"] },
+
+  // ── WEAPONS ──────────────────────────────────────────────────────
+  { modId:"595F2BF2F44836FB", name:"RHS - Status Quo", author:"RHS Team", version:"0.14.4795", cat:"weapons", desc:"The definitive Reforger weapons overhaul — hundreds of real-world weapons, optics, suppressors, and accessories.", tags:["weapons","military","major","rhs"] },
+  { modId:"5CA125536EE7430A", name:"M110 SASS", author:"Community", version:"1.0.28", cat:"weapons", desc:"M110 Semi-Automatic Sniper System with multiple rail configurations and realistic 7.62 ballistics.", tags:["weapons","sniper","dmr"] },
+  { modId:"5ABD0CB57F7E9EB1", name:"RIS Laser Attachments", author:"Community", version:"1.6.2", cat:"weapons", desc:"AN/PEQ-15, MAWL, DBAL and other laser/IR designator attachments for rail-equipped weapons.", tags:["weapons","attachments","night","optics"] },
+  { modId:"5AB301290317994A", name:"Bacon Suppressors", author:"Bacon", version:"1.2.7", cat:"weapons", desc:"Comprehensive suppressor pack with correct audio suppression and ballistic changes per caliber.", tags:["weapons","attachments","suppressor"] },
+  { modId:"5AC2954C784671B3", name:"Barrett M82A1", author:"Community", version:"1.2.3", cat:"weapons", desc:".50 BMG anti-materiel rifle with bipod, multiple optic configs, and vehicle/material penetration.", tags:["weapons","sniper","antimateriel","heavy"] },
+  { modId:"5D8D003BC5D829EC", name:"M2010 ESR", author:"Community", version:"1.0.9", cat:"weapons", desc:"M2010 Enhanced Sniper Rifle in .300 Win Mag with folding stock and multiple scope options.", tags:["weapons","sniper","bolt-action"] },
+  { modId:"67390ADF56492903", name:"UNCAG Weapon Pack", author:"UNCAG", version:"1.0.37", cat:"weapons", desc:"Large pack of non-standard small arms — uncommon military and paramilitary weapons from multiple nations.", tags:["weapons","military","variety"] },
+  { modId:"5B3ED33ADA805340", name:"Task Force Mattock Weapons", author:"TFM", version:"2.0.7", cat:"weapons", desc:"SAWs, LMGs, and support weapons from Task Force Mattock for sustained fire roles.", tags:["weapons","military","lmg","support"] },
+  { modId:"68A94303BF10212C", name:"NBS Barrett MRAD .338LM", author:"NBS", version:"1.0.0", cat:"weapons", desc:"Barrett MRAD precision bolt-action in .338 Lapua Magnum with high-quality animations and sounds.", tags:["weapons","sniper","precision"] },
+  { modId:"5F3A8D2C1B9E4076", name:"Glock Series Pack", author:"Community", version:"1.5.2", cat:"weapons", desc:"Glock 17, 19, 18C, and 45 handguns with full accessory compatibility and multiple frame options.", tags:["weapons","pistol","sidearm"] },
+  { modId:"62B7C4E9A5F31D08", name:"HK MP5 Family", author:"Community", version:"1.3.7", cat:"weapons", desc:"MP5, MP5SD, MP5K, and MP5-10 in a comprehensive CQB SMG pack with period-accurate accessories.", tags:["weapons","smg","cqb"] },
+  { modId:"5E9F2A4D8C3B1076", name:"FN FAL/L1A1 Pack", author:"Community", version:"1.1.4", cat:"weapons", desc:"FN FAL in multiple variants including L1A1 SLR, Israeli heavy barrel, and folding stock Paras.", tags:["weapons","rifle","classic"] },
+  { modId:"61D5F8C3A9B42E07", name:"AK Modernised Series", author:"Community", version:"2.0.1", cat:"weapons", desc:"AK-74M, AK-12, AK-101, AK-105 with modern rail systems, optics, and accessories.", tags:["weapons","rifle","ak","eastern"] },
+  { modId:"5A3C7E9D2F4B8016", name:"Dragunov SVD", author:"Community", version:"1.2.6", cat:"weapons", desc:"SVD sniper rifle with PSO-1, side-rail, and various stock options. Authentic Soviet marksman weapon.", tags:["weapons","sniper","dmr","eastern"] },
+  { modId:"63A9E5F4C2D71B08", name:"PKM/PKP Machine Gun Pack", author:"Community", version:"1.0.8", cat:"weapons", desc:"PKM and PKP Pecheneg belt-fed LMGs with bipod, scope rail, and vehicle mount configurations.", tags:["weapons","lmg","machinegun","eastern"] },
+  { modId:"5C4F2B8E1D9A3076", name:"Remington 870 Shotgun", author:"Community", version:"1.1.3", cat:"weapons", desc:"Remington 870 in tactical and hunting configurations. Buckshot, slug, and breaching rounds.", tags:["weapons","shotgun","cqb"] },
+  { modId:"62F8D3A7C5E41B09", name:"AT4 Launcher Pack", author:"Community", version:"1.0.5", cat:"weapons", desc:"AT4 and AT4-CS disposable anti-armour launchers with HEAT and HEDP warhead variants.", tags:["weapons","launcher","antitank","military"] },
+  { modId:"5D2E8F4B9C3A1076", name:"Javelin ATGM", author:"Community", version:"0.9.2", cat:"weapons", desc:"FGM-148 Javelin with fire-and-forget top-attack and direct-attack modes. Lock-on guidance system.", tags:["weapons","launcher","antitank","guided","military"] },
+  { modId:"61A3F9E5D7C24B08", name:"Stinger MANPADS", author:"Community", version:"1.0.3", cat:"weapons", desc:"FIM-92 Stinger man-portable air defence system for engaging low-flying helicopters and aircraft.", tags:["weapons","launcher","antiair","manpads","military"] },
+  { modId:"5B8D3C6A2F4E9017", name:"M32 Grenade Launcher", author:"Community", version:"1.1.0", cat:"weapons", desc:"M32 MGL 6-shot revolver grenade launcher with HE, smoke, and flare rounds.", tags:["weapons","launcher","grenade"] },
+  { modId:"63C7E4F2A9B51D08", name:"Thermal Optics Pack", author:"Community", version:"1.2.4", cat:"weapons", desc:"FLIR thermal weapon sights, clip-on systems, and handheld thermal devices.", tags:["weapons","optics","thermal","night"] },
+  { modId:"5A9F1C3E8D4B2076", name:"Trijicon RMR & ACOG Pack", author:"Community", version:"1.0.11", cat:"weapons", desc:"Authentic Trijicon optics — RMR red dots, ACOG 4x, and TA648 6x scopes.", tags:["weapons","optics","attachments"] },
+  { modId:"62E5D8A4C3F71B09", name:"EOTech & Magnifier Pack", author:"Community", version:"1.3.2", cat:"weapons", desc:"EXPS2, EXPS3, and 512 EOTech holographic sights with 3x and 6x flip magnifiers.", tags:["weapons","optics","attachments","holo"] },
+  { modId:"5D7A3F2C9E1B4086", name:"Night Force Scope Pack", author:"Community", version:"1.1.5", cat:"weapons", desc:"High-end ATACR 4-16x, NX8, and SHV precision scopes with FFP reticles.", tags:["weapons","optics","sniper","precision"] },
+
+  // ── VEHICLES ─────────────────────────────────────────────────────
+  { modId:"5D9ECAD071E9ECBC", name:"HMMWV Variants Pack", author:"Community", version:"1.0.70", cat:"vehicles", desc:"Comprehensive HMMWV pack — M1025 armed, M1038 cargo, M997 ambulance, and LRAS3 scout variants.", tags:["vehicles","military","wheeled","us"] },
+  { modId:"60ED3CC6E7E40221", name:"Sikorsky MH-60 DAP", author:"Community", version:"0.6.49", cat:"vehicles", desc:"Direct Action Penetrator Black Hawk — M134 miniguns, 2.75\" rockets, and AGM-114 Hellfire.", tags:["vehicles","aircraft","helicopter","military","us"] },
+  { modId:"6273146ADFE8241D", name:"WCS AH-6M Little Bird", author:"WCS", version:"6.0.17", cat:"vehicles", desc:"Light attack AH-6M with minigun and rocket pod configurations for close air support.", tags:["vehicles","aircraft","helicopter","military","aki"] },
+  { modId:"62AE96D92179F7A0", name:"WCS AH-6M Upgrade", author:"WCS", version:"6.0.2", cat:"vehicles", desc:"Upgrade pack for the WCS AH-6M adding Hellfire rails and additional weapon configurations.", tags:["vehicles","aircraft","aki"] },
+  { modId:"65D08E0825A12E2C", name:"Realistic Combat Drones (RHS)", author:"Community", version:"0.0.5", cat:"vehicles", desc:"RHS-compatible drone pack — Raven ISR, Switchblade 300/600 loitering munitions.", tags:["vehicles","drones","military","rhs"] },
+  { modId:"65AD60E204191D37", name:"Realistic Combat Drones", author:"Community", version:"2.3.4", cat:"vehicles", desc:"Standalone drone system with realistic flight physics, FPV camera feeds, and munitions.", tags:["vehicles","drones","uav"] },
+  { modId:"5F4C8E3D1B9A2076", name:"M1A2 Abrams Pack", author:"Community", version:"1.1.3", cat:"vehicles", desc:"M1A2 SEPv2 MBT with working thermal sight, ERA, and TUSK urban survival kit configs.", tags:["vehicles","military","tank","armour","us"] },
+  { modId:"62D9F5A3C4E81B07", name:"T-72 Variants Pack", author:"Community", version:"1.0.9", cat:"vehicles", desc:"T-72B, T-72B3, and T-72M1 main battle tanks with reactive armour and commander's sight.", tags:["vehicles","military","tank","armour","eastern"] },
+  { modId:"5B3E7C4D9F2A1086", name:"BMP-2 Infantry Fighting Vehicle", author:"Community", version:"1.2.1", cat:"vehicles", desc:"BMP-2 IFV with working 30mm autocannon, AT-5 ATGM, and full crew positions.", tags:["vehicles","military","ifv","eastern"] },
+  { modId:"61C8F4E7B3D52A09", name:"Bradley M2A3 IFV", author:"Community", version:"0.8.7", cat:"vehicles", desc:"M2A3 Bradley with 25mm Bushmaster, TOW launcher, and 6-man troop compartment.", tags:["vehicles","military","ifv","us"] },
+  { modId:"5A7D3F9E2C4B1086", name:"CH-47 Chinook", author:"Community", version:"1.0.4", cat:"vehicles", desc:"CH-47 heavy lift helicopter with cargo hook, full troop transport, and medevac configurations.", tags:["vehicles","aircraft","helicopter","transport","military"] },
+  { modId:"63A4E8F2D5C71B09", name:"UH-72 Lakota", author:"Community", version:"1.1.6", cat:"vehicles", desc:"Light utility helicopter for medevac, reconnaissance, and small team transport.", tags:["vehicles","aircraft","helicopter","transport"] },
+  { modId:"5C2F9B4E8D3A1076", name:"Mi-24 Hind Pack", author:"Community", version:"1.3.2", cat:"vehicles", desc:"Mi-24 Hind in multiple variants — gunship, transport, and medevac. Iconic assault helicopter.", tags:["vehicles","aircraft","helicopter","military","eastern"] },
+  { modId:"62B5F7A4C8E31D09", name:"A-10 Thunderbolt II", author:"Community", version:"0.7.4", cat:"vehicles", desc:"A-10C with GAU-8 cannon, Mavericks, JDAMs, and LITENING targeting pod. Close air support.", tags:["vehicles","aircraft","fixed-wing","cas","military"] },
+  { modId:"5E8D2C7F4B9A3016", name:"Zodiac RHIB Pack", author:"Community", version:"1.0.8", cat:"vehicles", desc:"Rigid hull inflatable boats in armed and unarmed configurations for coastal and riverine ops.", tags:["vehicles","naval","boat","maritime"] },
+  { modId:"61F3A5E8D4C92B07", name:"BTR-80 APC Pack", author:"Community", version:"1.1.0", cat:"vehicles", desc:"BTR-80 and BTR-80A wheeled APCs with KPV heavy machine gun and full crew positions.", tags:["vehicles","military","apc","eastern"] },
+  { modId:"5D6C4A8F3E2B1097", name:"Oshkosh JLTV", author:"Community", version:"1.2.5", cat:"vehicles", desc:"Joint Light Tactical Vehicle replacing the HMMWV — armed variants with remote weapon station.", tags:["vehicles","military","wheeled","us"] },
+  { modId:"63D7F9A2C5E41B08", name:"Supacat ATMP", author:"Community", version:"1.0.3", cat:"vehicles", desc:"All-Terrain Mobility Platform — lightweight 6x6 resupply and troop carrier for off-road logistics.", tags:["vehicles","military","wheeled","logistics"] },
+  { modId:"5B9E3D7C4A2F1086", name:"Civilian Vehicle Pack Vol.1", author:"Community", version:"1.5.8", cat:"vehicles", desc:"Civilian cars, trucks, and vans — sedans, pickup trucks, and SUVs for OPFOR and civilian scenarios.", tags:["vehicles","civilian","wheeled"] },
+  { modId:"62C6F4E8B7D31A09", name:"Technical Pickup Trucks", author:"Community", version:"1.2.0", cat:"vehicles", desc:"Armed Toyota HiLux technicals with DShK, Zu-23-2, and SPG-9 mount variants.", tags:["vehicles","technical","asymmetric","military"] },
+
+  // ── MAPS / TERRAIN ────────────────────────────────────────────────
+  { modId:"623EEDF242F6265E", name:"Gogland", author:"Mike", version:"1.4.11", cat:"maps", desc:"Gogland island in the Gulf of Finland — dense conifer forests, rocky coastline, and Swedish coastal fortifications.", tags:["maps","terrain","island","forest"] },
+  { modId:"5F7B3D9E2C4A1086", name:"Sahrani", author:"Community", version:"0.9.5", cat:"maps", desc:"Classic Sahrani from ArmA 1 faithfully recreated in Enfusion — large island with desert, jungle, and urban zones.", tags:["maps","terrain","island","classic","arma1"] },
+  { modId:"62A4F8C3E9D71B07", name:"Takistan", author:"Community", version:"1.1.2", cat:"maps", desc:"Afghan-inspired mountainous terrain from ArmA 2 recreated in Reforger — valleys, villages, and high peaks.", tags:["maps","terrain","mountain","desert","arma2"] },
+  { modId:"5E3C7A4D8F2B9016", name:"Altis (Preview)", author:"Community", version:"0.4.1", cat:"maps", desc:"Mediterranean island from ArmA 3 in early preview — large terrain with towns, airbase, and varied biomes.", tags:["maps","terrain","island","mediterranean","arma3","wip"] },
+  { modId:"61D8F5A3C2E79B04", name:"Chernarus Winter", author:"Community", version:"1.0.7", cat:"maps", desc:"Chernarus in deep winter conditions — snow-covered forests, frozen rivers, and overcast lighting.", tags:["maps","terrain","winter","forest","chernarus"] },
+  { modId:"5A6E9C3F4D2B1076", name:"Isla Abramia", author:"Community", version:"1.2.4", cat:"maps", desc:"Central European island with coastal towns, dense forests, and rolling farmland for varied engagements.", tags:["maps","terrain","island","europe"] },
+  { modId:"63B4E7F2C9A51D08", name:"Porto Urban Expansion", author:"Community", version:"1.1.0", cat:"maps", desc:"Dense urban expansion adding city blocks, suburbs, and industrial zones to existing terrains.", tags:["maps","terrain","urban","cqb"] },
+  { modId:"5D1F8E4B9C3A2076", name:"Norwegian Fjords", author:"Community", version:"0.8.3", cat:"maps", desc:"Dramatic Scandinavian fjord terrain — steep cliffs, narrow valleys, and coastal fishing villages.", tags:["maps","terrain","norway","scandinavia","wip"] },
+
+  // ── MILITARY / FACTIONS ───────────────────────────────────────────
+  { modId:"629B2BA37EFFD577", name:"WCS Armaments", author:"WCS Team", version:"6.0.22", cat:"military", desc:"Extensive WCS weapons and vehicles pack. Hundreds of items covering US, Eastern, and NATO forces.", tags:["military","weapons","vehicles","us","nato","aki"] },
+  { modId:"607890C143259412", name:"Bundeswehr Equipment", author:"Community", version:"3.0.0", cat:"military", desc:"Full German Bundeswehr faction — Flecktarn uniforms, G36, HK416, Leopard 2, and Marder IFV.", tags:["military","faction","germany","bundeswehr","nato"] },
+  { modId:"6276E6E3CC97A22B", name:"AUS Core", author:"AUS Team", version:"0.1.15", cat:"military", desc:"Australian Defence Force — AUSCAM Multicam uniforms, EF88 Austeyr, and AUS-specific gear.", tags:["military","faction","australia","adf"] },
+  { modId:"5D0551624969C92E", name:"Zelik's Characters", author:"Zelik", version:"1.1.20", cat:"military", desc:"Expanded character and uniform options adding diverse civilian and paramilitary appearances.", tags:["military","character","uniforms","civilian"] },
+  { modId:"5F8D3A7C2E4B9016", name:"Russian Armed Forces Pack", author:"Community", version:"1.4.3", cat:"military", desc:"Complete Russian Federation faction — EMR digital camo, AK-12, T-14 Armata, and Su-25 support.", tags:["military","faction","russia","eastern"] },
+  { modId:"62C7F4E9B5D31A08", name:"USMC Raiders", author:"Community", version:"1.2.1", cat:"military", desc:"US Marine Corps Marine Raider special operations — OCP, HK416, and JTAC terminal attack equipment.", tags:["military","faction","us","usmc","socom"] },
+  { modId:"5A4E9D3C8F2B1076", name:"British Armed Forces", author:"Community", version:"1.1.8", cat:"military", desc:"British Army faction with MTP, SA80/L85A3, Jackal, and Viking APC configurations.", tags:["military","faction","uk","britain","nato"] },
+  { modId:"61B9E7F5D4C32A08", name:"French Foreign Legion", author:"Community", version:"1.0.6", cat:"military", desc:"Légion étrangère with CCE camo, FAMAS, FELIN system, and VAB wheeled APC.", tags:["military","faction","france","legion","nato"] },
+  { modId:"5C3F8B4E9D2A1076", name:"OPFOR Insurgent Pack", author:"Community", version:"1.3.5", cat:"military", desc:"Irregular forces — civilian clothes, mix of Soviet and Western weapons, IED, and technicals.", tags:["military","faction","opfor","insurgent","asymmetric"] },
+  { modId:"63A5F7C2E4D81B09", name:"PMC Contractor Pack", author:"Community", version:"1.1.3", cat:"military", desc:"Private military contractor faction with MultiCam, mixed armaments, and civilian vehicle options.", tags:["military","faction","pmc","contractor"] },
+  { modId:"5B7D4C9E3A2F1086", name:"Norwegian Telemark Battalion", author:"Community", version:"1.0.4", cat:"military", desc:"Norwegian Telemark Battalion — Norwegian M04 camo, HK416N, and CV90 IFV.", tags:["military","faction","norway","nato"] },
+  { modId:"62D4F8A5C9E31B07", name:"Polish GROM", author:"Community", version:"1.1.0", cat:"military", desc:"Polish special forces GROM unit with Polish Woodland, HK416, and SBR configurations.", tags:["military","faction","poland","socom","nato"] },
+  { modId:"5E6C2A7D4F3B9086", name:"Delta Force / CAG Pack", author:"Community", version:"1.2.7", cat:"military", desc:"1st SFOD-D operators with Crye Multicam, SBR HK416s, and suppressed SMG loadouts.", tags:["military","faction","us","socom","delta"] },
+  { modId:"63C9F5E2A7D41B08", name:"KSK Kommando Pack", author:"Community", version:"1.0.9", cat:"military", desc:"German Kommando Spezialkräfte with KSK-specific equipment, MP7, and G28 DMR.", tags:["military","faction","germany","ksk","socom"] },
+];
+
+let workshopCat = 'all';
+
+function initWorkshop() {
+  renderWorkshop();
+  updateWkInListCount();
+  updateApiKeyBadge();
+}
+
+function renderWorkshop() {
+  const search = (document.getElementById('workshop-search')?.value || '').toLowerCase();
+  const grid = document.getElementById('workshop-grid');
+  const existingIds = new Set(mods.map(m => m.modId));
+
+  const filtered = WORKSHOP_MODS.filter(m => {
+    const matchCat = workshopCat === 'all' || m.cat === workshopCat;
+    const matchSearch = !search || m.name.toLowerCase().includes(search) ||
+      m.modId.toLowerCase().includes(search) ||
+      m.desc.toLowerCase().includes(search) ||
+      m.tags.some(t => t.includes(search));
+    return matchCat && matchSearch;
+  });
+
+  const countEl = document.getElementById('wk-result-count');
+  if(countEl) countEl.textContent = filtered.length + ' of ' + WORKSHOP_MODS.length + ' mods';
+
+  grid.innerHTML = filtered.length ? filtered.map(m => {
+    const inList = existingIds.has(m.modId);
+    const tagHtml = m.tags.map(t => `<span class="wk-tag">${t}</span>`).join('');
+    const workshopUrl = `https://reforger.armaplatform.com/workshop/${m.modId}`;
+    return `<div class="workshop-card ${inList ? 'in-list' : ''}">
+      <div class="wk-name">${escHtml(m.name)}</div>
+      <div class="wk-author">by ${escHtml(m.author)} &nbsp;·&nbsp; v${escHtml(m.version)}</div>
+      <div class="wk-desc">${escHtml(m.desc)}</div>
+      <div class="wk-tags">${tagHtml}</div>
+      <div class="wk-footer">
+        <span class="wk-id">${m.modId}</span>
+        <div style="display:flex;gap:6px">
+          <a href="${workshopUrl}" target="_blank" class="btn btn-sm" style="text-decoration:none;padding:4px 10px;font-size:10px">&#128279; WORKSHOP</a>
+          ${inList
+            ? `<button class="btn btn-sm btn-danger" onclick="removeWorkshopMod('${m.modId}')">REMOVE</button>`
+            : `<button class="btn btn-sm btn-success" onclick="addWorkshopMod('${escHtml(m.modId)}','${escHtml(m.name).replace(/'/g,"\\'")}','${escHtml(m.version)}')">+ ADD</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="grid-column:1/-1" class="wk-loading">NO MODS MATCH YOUR SEARCH</div>';
+
+  updateWkInListCount();
+}
+
+function addWorkshopMod(modId, name, version) {
+  if(mods.find(m => m.modId === modId)) { toast('Already in config', 'danger'); return; }
+  makeBackup();
+  mods.push({ modId, name, version, required: true });
+  renderWorkshop();
+  renderMods();
+  toast('"' + name + '" added to config', 'success');
+}
+
+function removeWorkshopMod(modId) {
+  makeBackup();
+  mods = mods.filter(m => m.modId !== modId);
+  renderWorkshop();
+  renderMods();
+  toast('Mod removed', 'success');
+}
+
+function updateWkInListCount() {
+  const existingIds = new Set(mods.map(m => m.modId));
+  const count = WORKSHOP_MODS.filter(m => existingIds.has(m.modId)).length;
+  const el = document.getElementById('wk-in-list-count');
+  if(el) el.textContent = count + ' IN CONFIG';
+}
+
+function filterWorkshop() { renderWorkshop(); }
+
+function setWorkshopCat(el) {
+  workshopCat = el.dataset.cat;
+  document.querySelectorAll('#workshop-cat-filter .wk-cat').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderWorkshop();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONFIG COMPARISON
+// ═══════════════════════════════════════════════════════════════
+let compareA = null, compareAName = '— not loaded —';
+let compareB = null, compareBName = '— not loaded —';
+
+function loadCurrentAsCompareA() {
+  compareA = buildConfig();
+  compareAName = document.getElementById('status-text')?.textContent || 'Active Config';
+  document.getElementById('compare-a-name').textContent = compareAName;
+  document.getElementById('compare-a-zone').innerHTML = `<div class="compare-loaded"><span style="color:var(--success)">&#10003;</span> Loaded: ${escHtml(compareAName)}<br><span style="color:var(--text-muted)">Game: ${escHtml(compareA.game?.name||'Unnamed')} &nbsp;·&nbsp; ${compareA.game?.mods?.length||0} mods</span></div>`;
+  checkCompareReady();
+}
+
+function loadCompareFile(side, event) {
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const cfg = JSON.parse(e.target.result);
+      if(side === 'a') {
+        compareA = cfg; compareAName = file.name;
+        document.getElementById('compare-a-name').textContent = file.name;
+        document.getElementById('compare-a-zone').innerHTML = `<div class="compare-loaded"><span style="color:var(--success)">&#10003;</span> ${escHtml(file.name)}<br><span style="color:var(--text-muted)">Game: ${escHtml(cfg.game?.name||'Unnamed')} &nbsp;·&nbsp; ${cfg.game?.mods?.length||0} mods</span></div>`;
+      } else {
+        compareB = cfg; compareBName = file.name;
+        document.getElementById('compare-b-name').textContent = file.name;
+        document.getElementById('compare-b-zone').innerHTML = `<div class="compare-loaded"><span style="color:var(--success)">&#10003;</span> ${escHtml(file.name)}<br><span style="color:var(--text-muted)">Game: ${escHtml(cfg.game?.name||'Unnamed')} &nbsp;·&nbsp; ${cfg.game?.mods?.length||0} mods</span></div>`;
+      }
+      checkCompareReady();
+    } catch(err) { toast('Invalid JSON: ' + err.message, 'danger'); }
+  };
+  reader.readAsText(file);
+}
+
+function dropCompareFile(side, event) {
+  event.preventDefault();
+  document.getElementById('compare-drop-' + side).classList.remove('dragover');
+  const file = event.dataTransfer.files[0];
+  if(!file) return;
+  loadCompareFile(side, { target: { files: [file] } });
+}
+
+function checkCompareReady() {
+  const btn = document.getElementById('compare-run-btn');
+  if(compareA && compareB) { btn.disabled = false; btn.classList.add('btn-primary'); }
+}
+
+function flattenConfig(cfg, prefix = '') {
+  const result = {};
+  for(const key in cfg) {
+    const val = cfg[key];
+    const fullKey = prefix ? prefix + '.' + key : key;
+    if(val !== null && typeof val === 'object' && !Array.isArray(val)) {
+      Object.assign(result, flattenConfig(val, fullKey));
+    } else if(Array.isArray(val) && key === 'mods') {
+      result[fullKey] = val.map(m => m.modId).sort().join(',');
+    } else {
+      result[fullKey] = JSON.stringify(val);
+    }
+  }
+  return result;
+}
+
+function runCompare() {
+  if(!compareA || !compareB) return;
+  const flatA = flattenConfig(compareA);
+  const flatB = flattenConfig(compareB);
+  const allKeys = new Set([...Object.keys(flatA), ...Object.keys(flatB)]);
+  const diffs = [], sames = [];
+
+  allKeys.forEach(k => {
+    const a = flatA[k], b = flatB[k];
+    if(a === b) { sames.push(k); return; }
+    diffs.push({ key: k, a: a ?? null, b: b ?? null });
+  });
+
+  diffs.sort((x, y) => x.key.localeCompare(y.key));
+  sames.sort();
+
+  const modDiff = compareModLists(compareA.game?.mods || [], compareB.game?.mods || []);
+
+  const resultEl = document.getElementById('compare-results');
+
+  let html = `
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="background:var(--panel2);border:1px solid var(--border);padding:12px 20px;flex:1;text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--warn)">${diffs.length}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim)">DIFFERENCES</div>
+      </div>
+      <div style="background:var(--panel2);border:1px solid var(--border);padding:12px 20px;flex:1;text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--success)">${sames.length}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim)">IDENTICAL</div>
+      </div>
+      <div style="background:var(--panel2);border:1px solid var(--border);padding:12px 20px;flex:1;text-align:center">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--accent)">${modDiff.onlyA.length + modDiff.onlyB.length}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim)">MOD DIFFERENCES</div>
+      </div>
+    </div>`;
+
+  // Field diff table
+  if(diffs.length > 0) {
+    html += `<div class="card" style="margin-bottom:16px">
+      <div class="card-header"><div class="card-title">Field Differences</div></div>
+      <div style="overflow-x:auto">
+      <table class="diff-table">
+        <thead><tr>
+          <th>Field</th>
+          <th style="color:#7ec8e3">A — ${escHtml(compareAName)}</th>
+          <th style="color:#98d49a">B — ${escHtml(compareBName)}</th>
+          <th>Merge</th>
+        </tr></thead>
+        <tbody>`;
+    diffs.forEach(d => {
+      const onlyA = d.b === null;
+      const onlyB = d.a === null;
+      const cls = onlyA ? 'diff-only-a' : onlyB ? 'diff-only-b' : 'diff-changed';
+      const badge = onlyA ? '<span class="diff-badge diff-badge-only">A ONLY</span>' : onlyB ? '<span class="diff-badge diff-badge-only">B ONLY</span>' : '<span class="diff-badge diff-badge-changed">CHANGED</span>';
+      html += `<tr class="${cls}">
+        <td class="diff-key">${escHtml(d.key)}${badge}</td>
+        <td class="diff-a">${d.a !== null ? escHtml(String(d.a)) : '<span style="color:var(--text-muted)">—</span>'}</td>
+        <td class="diff-b">${d.b !== null ? escHtml(String(d.b)) : '<span style="color:var(--text-muted)">—</span>'}</td>
+        <td class="merge-btn-cell">
+          ${d.a !== null ? `<button class="btn btn-sm" style="font-size:9px;padding:3px 8px" onclick="mergeFieldToActive('${escHtml(d.key)}',${JSON.stringify(d.a)})">USE A</button>` : ''}
+          ${d.b !== null ? `<button class="btn btn-sm" style="font-size:9px;padding:3px 8px" onclick="mergeFieldToActive('${escHtml(d.key)}',${JSON.stringify(d.b)})">USE B</button>` : ''}
+        </td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
+  // Mod diff
+  if(modDiff.onlyA.length || modDiff.onlyB.length || modDiff.shared.length) {
+    html += `<div class="card">
+      <div class="card-header"><div class="card-title">Mod Comparison</div>
+        <div style="display:flex;gap:6px">
+          ${modDiff.onlyB.length ? `<button class="btn btn-sm" onclick="mergeModsFromB()">MERGE B INTO ACTIVE</button>` : ''}
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+      <table class="diff-table">
+        <thead><tr><th>Mod Name</th><th>Mod ID</th><th style="color:#7ec8e3">Config A</th><th style="color:#98d49a">Config B</th></tr></thead>
+        <tbody>`;
+    const allModIds = new Set([...modDiff.onlyA.map(m=>m.modId),...modDiff.onlyB.map(m=>m.modId),...modDiff.shared.map(m=>m.modId)]);
+    const modsMapA = Object.fromEntries((compareA.game?.mods||[]).map(m=>[m.modId,m]));
+    const modsMapB = Object.fromEntries((compareB.game?.mods||[]).map(m=>[m.modId,m]));
+    allModIds.forEach(id => {
+      const ma = modsMapA[id], mb = modsMapB[id];
+      const onlyA = !!ma && !mb, onlyB = !ma && !!mb;
+      const cls = onlyA ? 'diff-only-a' : onlyB ? 'diff-only-b' : '';
+      const name = (ma||mb).name;
+      html += `<tr class="${cls}">
+        <td>${escHtml(name)}</td>
+        <td class="diff-key">${id}</td>
+        <td>${ma ? `<span class="diff-a">v${ma.version||'?'}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+        <td>${mb ? `<span class="diff-b">v${mb.version||'?'}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  }
+
+  if(diffs.length === 0 && modDiff.onlyA.length === 0 && modDiff.onlyB.length === 0) {
+    html += `<div style="text-align:center;padding:40px;font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--success);letter-spacing:2px;">&#10003; CONFIGS ARE IDENTICAL</div>`;
+  }
+
+  resultEl.innerHTML = html;
+}
+
+function compareModLists(modsA, modsB) {
+  const idsA = new Set(modsA.map(m=>m.modId));
+  const idsB = new Set(modsB.map(m=>m.modId));
+  return {
+    onlyA: modsA.filter(m=>!idsB.has(m.modId)),
+    onlyB: modsB.filter(m=>!idsA.has(m.modId)),
+    shared: modsA.filter(m=>idsB.has(m.modId))
+  };
+}
+
+function mergeModsFromB() {
+  if(!compareB) return;
+  const existingIds = new Set(mods.map(m=>m.modId));
+  const newOnes = (compareB.game?.mods||[]).filter(m=>!existingIds.has(m.modId));
+  if(!newOnes.length) { toast('No new mods in Config B to merge','danger'); return; }
+  makeBackup();
+  mods = [...mods, ...newOnes];
+  renderMods();
+  renderWorkshop();
+  toast(newOnes.length + ' mods merged from Config B', 'success');
+}
+
+function mergeFieldToActive(key, val) {
+  // For simple top-level fields, try to map back to form fields
+  const fieldMap = {
+    'bindAddress':'bindAddress','bindPort':'bindPort','publicAddress':'publicAddress','publicPort':'publicPort',
+    'game.name':'gameName','game.maxPlayers':'gameMaxPlayers','game.scenarioId':'gameScenarioId',
+    'game.password':'gamePassword','game.passwordAdmin':'gamePasswordAdmin',
+    'game.gameProperties.serverMaxViewDistance':'propMaxViewDist',
+    'game.gameProperties.networkViewDistance':'propNetViewDist',
+    'game.gameProperties.serverMinGrassDistance':'propGrassDist',
+    'operating.joinQueue.maxSize':'opJoinQueue',
+    'operating.aiLimit':'opAILimit','operating.playerSaveTime':'opPlayerSaveTime',
+  };
+  const formId = fieldMap[key];
+  if(formId) {
+    const el = document.getElementById(formId);
+    if(el) {
+      makeBackup();
+      const parsed = JSON.parse(val);
+      el.value = parsed;
+      toast('Field "' + key + '" updated', 'success');
+      return;
+    }
+  }
+  toast('Field "' + key + '" cannot be merged directly — load Config A or B and edit manually', 'danger');
+}
+
+// ─── STARTUP ─────────────────────────────────────────────────────────────────
+
+const blankConfig = {"bindAddress":"0.0.0.0","bindPort":2401,"publicAddress":"","publicPort":2401,"a2s":{"address":"","port":2402},"rcon":{"address":"0.0.0.0","port":2403,"password":"","permission":"admin","blacklist":[],"whitelist":[]},"game":{"name":"","password":"","passwordAdmin":"","admins":[],"scenarioId":"","maxPlayers":32,"visible":true,"crossPlatform":false,"supportedPlatforms":["PLATFORM_PC"],"modsRequiredByDefault":true,"gameProperties":{"serverMaxViewDistance":1600,"serverMinGrassDistance":50,"networkViewDistance":1500,"disableThirdPerson":false,"fastValidation":true,"battlEye":true,"VONDisableUI":false,"VONDisableDirectSpeechUI":false,"VONCanTransmitCrossFaction":false},"mods":[]},"operating":{"lobbyPlayerSynchronise":true,"joinQueue":{"maxSize":10},"aiLimit":-1}};
+populateForm(blankConfig);
+document.getElementById('status-text').textContent = 'NEW CONFIG';
+
+</script>
+</body>
+</html>
