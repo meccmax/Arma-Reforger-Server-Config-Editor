@@ -445,13 +445,7 @@
                 <div class="chip" data-val="CONSOLE" onclick="toggleChip(this)">CONSOLE</div>
               </div>
             </div>
-            <div class="form-group">
-              <label>Mods Required by Default <span class="tt" data-tip="If true, all mods in the list are required for clients to join (unless individually overridden). Default: true. Set false to make all mods optional by default.">?</span></label>
-              <div class="checkbox-row" style="margin-top:8px">
-                <input type="checkbox" id="modsRequiredByDefault" checked>
-                <label for="modsRequiredByDefault">modsRequiredByDefault</label>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
@@ -1128,7 +1122,6 @@ function populateForm(cfg) {
     sv('gameScenarioId',g.scenarioId); sv('gameMaxPlayers',g.maxPlayers);
     sv('gameAdmins',(g.admins||[]).join('\n'));
     sc('gameVisible',g.visible); sc('gameCrossPlatform',g.crossPlatform);
-    sc('modsRequiredByDefault', g.modsRequiredByDefault !== false);
     sv('dedicatedServerId',cfg.dedicatedServerId);
     sv('gameRegion',cfg.region||'');
     document.querySelectorAll('#platform-chips .chip').forEach(c=>c.classList.toggle('selected',(g.supportedPlatforms||[]).includes(c.dataset.val)));
@@ -1235,7 +1228,6 @@ function buildConfig(){
     crossPlatform:gb('gameCrossPlatform'),
     supportedPlatforms:platforms,
     ...(clientTypes.length>0&&{supportedGameClientTypes:clientTypes}),
-    modsRequiredByDefault:gb('modsRequiredByDefault'),
     gameProperties:gameProps,
     mods:mods.map(m=>{
       const entry={modId:m.modId,name:m.name,required:m.required};
@@ -1253,7 +1245,7 @@ function buildConfig(){
   if(gb('opDisableNavmesh')) op.disableNavmeshStreaming=[];
   if(gb('opAddonsVerify')) op.addonsVerify=true;
   if(gb('opAddonsRepair')) op.addonsRepair=true;
-  const aiL=gn('opAILimit'); if(aiL!==undefined) op.AILimit=aiL;
+  const aiL=gn('opAILimit'); if(aiL!==undefined) op.aiLimit=aiL;
   const pst=gn('opPlayerSaveTime'); if(pst!==undefined) op.playerSaveTime=pst;
   const srt=gn('opSlotReservationTimeout'); if(srt!==undefined) op.slotReservationTimeout=srt;
   const sfps=gn('opServerFps'); if(sfps!==undefined) op.serverFps=sfps;
@@ -2533,7 +2525,7 @@ function mergeFieldToActive(key, val) {
     'game.gameProperties.networkViewDistance':'propNetViewDist',
     'game.gameProperties.serverMinGrassDistance':'propGrassDist',
     'operating.joinQueue.maxSize':'opJoinQueue',
-    'operating.AILimit':'opAILimit','operating.aiLimit':'opAILimit','operating.playerSaveTime':'opPlayerSaveTime',
+    'operating.aiLimit':'opAILimit','operating.playerSaveTime':'opPlayerSaveTime',
   };
   const formId = fieldMap[key];
   if(formId) {
