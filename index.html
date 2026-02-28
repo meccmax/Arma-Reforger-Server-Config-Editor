@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REFORGER CONFIG EDITOR</title>
+<title>meccmax's Arma Reforger Server Configuration Tool</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap');
   :root {
@@ -257,7 +257,7 @@
   <div class="logo">
     <div class="logo-icon"><span>R</span></div>
     <div>
-      <div class="logo-text">REFORGER CFG</div>
+      <div class="logo-text" style="font-size:13px;letter-spacing:2px;line-height:1.3">meccmax's<br><span style="font-size:16px;letter-spacing:3px">REFORGER CFG</span></div>
       <div class="logo-sub">SERVER CONFIG EDITOR // v2.0</div>
     </div>
   </div>
@@ -504,11 +504,11 @@
           <div class="form-grid">
             <div class="form-group">
               <label>Server Max View Distance (m) <span class="tt" data-tip="Maximum render/view distance in meters. Higher = better visuals, higher CPU cost. Range: 500-10000. Recommended: 1600-2500 for balanced performance.">?</span></label>
-              <input type="number" id="propMaxViewDist" placeholder="1600" min="500" max="10000">
+              <input type="number" id="propMaxViewDist" placeholder="1600" min="500" max="12000">
             </div>
             <div class="form-group">
               <label>Network View Distance (m) <span class="tt" data-tip="Distance at which entities are synced over the network. Should be equal to or less than serverMaxViewDistance. Lower = better performance, less situational awareness.">?</span></label>
-              <input type="number" id="propNetViewDist" placeholder="1500" min="500" max="5000">
+              <input type="number" id="propNetViewDist" placeholder="1500" min="500" max="12000">
             </div>
             <div class="form-group">
               <label>Min Grass Distance (m) <span class="tt" data-tip="Minimum distance at which grass is rendered. 0 = no minimum enforced. Range: 0 or 50-150. Affects performance significantly — lower improves FPS.">?</span></label>
@@ -589,7 +589,10 @@
             </table>
           </div>
           <div class="add-mod-panel" id="add-mod-panel">
-            <div class="section-title">Add New Mod</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div class="section-title" style="margin:0">Add New Mod</div>
+              <button class="btn btn-sm" onclick="cancelAddMod()" title="Cancel" style="opacity:0.7">&#10005; CANCEL</button>
+            </div>
             <div class="add-mod-grid">
               <div class="form-group">
                 <label>Mod ID <span class="tt" data-tip="16-character hex Workshop mod ID from the Arma Reforger Workshop URL or Workbench.">?</span></label>
@@ -600,17 +603,24 @@
                 <input type="text" id="new-mod-name" placeholder="My Awesome Mod">
               </div>
               <div class="form-group">
-                <label>Version <span class="tt" data-tip="Specific version to load. If omitted, the latest available version is used.">?</span></label>
-                <input type="text" id="new-mod-version" placeholder="1.0.0">
-              </div>
-              <div class="form-group">
-                <label>&nbsp;</label>
-                <button class="btn btn-success" onclick="addMod()">ADD</button>
+                <label>Version <span class="tt" data-tip="Pin a specific version (e.g. 1.2.0), or leave blank and check Always Latest to omit the version field entirely — the server will always load the newest available version.">?</span></label>
+                <input type="text" id="new-mod-version" placeholder="e.g. 1.2.0 — or leave blank for latest" oninput="syncLatestCheckbox()" style="width:100%">
               </div>
             </div>
-            <div class="checkbox-row" style="margin-top:10px">
-              <input type="checkbox" id="new-mod-required" checked>
-              <label for="new-mod-required">Required <span class="tt" data-tip="If true, clients must have this mod to join. If false, the mod is optional and the server starts even if the client doesn't have it.">?</span></label>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--text-dim)" title="Omits version field entirely — server always uses latest mod version per Reforger wiki">
+                <input type="checkbox" id="new-mod-latest" onchange="syncVersionInput()" checked style="margin:0;accent-color:var(--success)">
+                <span id="latest-label-text" style="color:var(--success)">ALWAYS LATEST</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--text-dim)">
+                <input type="checkbox" id="new-mod-required" checked style="margin:0">
+                REQUIRED
+                <span class="tt" data-tip="If true, clients must have this mod to join. If false, the mod is optional.">?</span>
+              </label>
+              <div style="margin-left:auto;display:flex;gap:8px">
+                <button class="btn btn-sm" onclick="cancelAddMod()">CANCEL</button>
+                <button class="btn btn-success" onclick="addMod()">+ ADD MOD</button>
+              </div>
             </div>
           </div>
         </div>
@@ -681,6 +691,10 @@
       <div class="card">
         <div class="card-header"><div class="card-title">Persistence Settings</div></div>
         <div class="card-body">
+          <div style="background:rgba(200,168,75,.08);border:1px solid var(--accent);padding:12px 16px;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.8;">
+            <span style="color:var(--accent);letter-spacing:2px;font-size:9px;">v1.6 NOTE</span><br>
+            <span style="color:var(--text-dim)">As of v1.6, saving is disabled for singleplayer missions. Persistence only applies to dedicated server scenarios that explicitly support it. The WebAPI database option requires a compatible external server.</span>
+          </div>
           <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;">Persistence allows game state, player data, and world changes to be saved and restored across server restarts. Leave blank to use mission defaults.</p>
           <div class="form-grid">
             <div class="form-group">
@@ -794,6 +808,7 @@
             <button class="wk-cat" data-cat="pvp" onclick="setScenarioCat(this)">PVP</button>
             <button class="wk-cat" data-cat="sandbox" onclick="setScenarioCat(this)">SANDBOX</button>
             <button class="wk-cat" data-cat="gamemaster" onclick="setScenarioCat(this)">GAME MASTER</button>
+            <button class="wk-cat" data-cat="v1.6" onclick="setScenarioCat(this)">NEW IN 1.6</button>
           </div>
           <div class="scenario-grid" id="scenario-grid"></div>
           <div class="sep"></div>
@@ -1222,7 +1237,11 @@ function buildConfig(){
     ...(clientTypes.length>0&&{supportedGameClientTypes:clientTypes}),
     modsRequiredByDefault:gb('modsRequiredByDefault'),
     gameProperties:gameProps,
-    mods:mods
+    mods:mods.map(m=>{
+      const entry={modId:m.modId,name:m.name,required:m.required};
+      if(m.version) entry.version=m.version;
+      return entry;
+    })
   };
 
   // Operating
@@ -1234,7 +1253,7 @@ function buildConfig(){
   if(gb('opDisableNavmesh')) op.disableNavmeshStreaming=[];
   if(gb('opAddonsVerify')) op.addonsVerify=true;
   if(gb('opAddonsRepair')) op.addonsRepair=true;
-  const aiL=gn('opAILimit'); if(aiL!==undefined) op.aiLimit=aiL;
+  const aiL=gn('opAILimit'); if(aiL!==undefined) op.AILimit=aiL;
   const pst=gn('opPlayerSaveTime'); if(pst!==undefined) op.playerSaveTime=pst;
   const srt=gn('opSlotReservationTimeout'); if(srt!==undefined) op.slotReservationTimeout=srt;
   const sfps=gn('opServerFps'); if(sfps!==undefined) op.serverFps=sfps;
@@ -1280,13 +1299,22 @@ function renderMods(filter=''){
   const filtered=mods.filter(m=>!search||m.name.toLowerCase().includes(search)||m.modId.toLowerCase().includes(search));
   tbody.innerHTML=filtered.map(m=>{
     const i=mods.indexOf(m);
+    const verCell = m.version
+      ? `<span class='mod-version'>${escHtml(m.version)}</span>`
+      : `<span style='font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1px;padding:2px 7px;border:1px solid var(--success);color:var(--success)'>LATEST</span>`;
+    const verBtn = m.version
+      ? `<button class="btn btn-sm" style="font-size:9px;padding:3px 8px;border-color:var(--success);color:var(--success)" onclick="setModLatest(${i})" title="Remove pinned version — always load latest">→ LATEST</button>`
+      : `<button class="btn btn-sm" style="font-size:9px;padding:3px 8px" onclick="openPinVersion(${i})" title="Pin a specific version">PIN VER</button>`;
     return `<tr draggable="true" data-idx="${i}" ondragstart="dragStart(event,${i})" ondragover="dragOver(event)" ondrop="dropMod(event,${i})" ondragend="dragEnd()">
       <td><span class="drag-handle" title="Drag to reorder">&#8943;</span></td>
       <td><span class="mod-id">${m.modId}</span></td>
       <td style="font-weight:500">${escHtml(m.name)}</td>
-      <td><span class="mod-version">${escHtml(m.version||'')}</span></td>
+      <td id="ver-cell-${i}">${verCell}</td>
       <td><span class="badge ${m.required?'badge-required':'badge-optional'}">${m.required?'REQ':'OPT'}</span></td>
-      <td><button class="btn btn-sm btn-danger" onclick="removeMod(${i})">REMOVE</button></td>
+      <td style="display:flex;gap:4px">
+        ${verBtn}
+        <button class="btn btn-sm btn-danger" onclick="removeMod(${i})">✕</button>
+      </td>
     </tr>`;
   }).join('');
   document.getElementById('mods-count').textContent=mods.length+' MOD'+(mods.length!==1?'S':'');
@@ -1296,19 +1324,101 @@ function filterMods(){ renderMods(document.getElementById('mod-search').value); 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function removeMod(idx){ makeBackup(); mods.splice(idx,1); renderMods(document.getElementById('mod-search').value); toast('Mod removed'); }
+
+function setModLatest(idx){
+  const name = mods[idx].name;
+  makeBackup();
+  delete mods[idx].version;
+  renderMods(document.getElementById('mod-search').value);
+  toast('"' + name + '" set to Always Latest', 'success');
+}
+
+function openPinVersion(idx){
+  const cell = document.getElementById('ver-cell-' + idx);
+  if(!cell) return;
+  const currentVer = mods[idx].version || '';
+  cell.innerHTML = `
+    <div style="display:flex;gap:4px;align-items:center">
+      <input type="text" id="pin-ver-input-${idx}"
+        value="${escHtml(currentVer)}"
+        placeholder="e.g. 1.2.0"
+        style="width:90px;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--accent);color:var(--text)"
+        onkeydown="if(event.key==='Enter')confirmPinVersion(${idx});if(event.key==='Escape')renderMods(document.getElementById('mod-search').value);">
+      <button class="btn btn-sm" style="font-size:9px;padding:3px 8px;border-color:var(--accent);color:var(--accent)" onclick="confirmPinVersion(${idx})">✓</button>
+      <button class="btn btn-sm" style="font-size:9px;padding:3px 6px" onclick="renderMods(document.getElementById('mod-search').value)">✕</button>
+    </div>`;
+  setTimeout(()=>{ const inp=document.getElementById('pin-ver-input-'+idx); if(inp){inp.focus();inp.select();} }, 20);
+}
+
+function confirmPinVersion(idx){
+  const inp = document.getElementById('pin-ver-input-' + idx);
+  if(!inp) return;
+  const ver = inp.value.trim();
+  makeBackup();
+  if(ver === '') {
+    delete mods[idx].version;
+    toast('"' + mods[idx].name + '" set to Always Latest', 'success');
+  } else {
+    mods[idx].version = ver;
+    toast('"' + mods[idx].name + '" pinned to v' + ver, 'success');
+  }
+  renderMods(document.getElementById('mod-search').value);
+}
 function sortMods(){ makeBackup(); mods.sort((a,b)=>a.name.localeCompare(b.name)); renderMods(); toast('Mods sorted'); }
-function toggleAddMod(){ const p=document.getElementById('add-mod-panel'); p.classList.toggle('open'); if(p.classList.contains('open')) document.getElementById('new-mod-id').focus(); }
+function toggleAddMod(){
+  const p=document.getElementById('add-mod-panel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')) document.getElementById('new-mod-id').focus();
+}
+function cancelAddMod(){
+  document.getElementById('add-mod-panel').classList.remove('open');
+  document.getElementById('new-mod-id').value='';
+  document.getElementById('new-mod-name').value='';
+  document.getElementById('new-mod-version').value='';
+  document.getElementById('new-mod-latest').checked=true;
+  document.getElementById('new-mod-required').checked=true;
+  syncVersionInput();
+}
+
+function syncVersionInput(){
+  const latest = document.getElementById('new-mod-latest').checked;
+  const verInput = document.getElementById('new-mod-version');
+  verInput.disabled = latest;
+  verInput.style.opacity = latest ? '0.35' : '1';
+  verInput.placeholder = latest ? 'Omitted — always loads latest version' : 'e.g. 1.2.0';
+  if(latest) verInput.value = '';
+  const lbl = document.getElementById('latest-label-text');
+  if(lbl) { lbl.style.color = latest ? 'var(--success)' : 'var(--text-dim)'; }
+}
+function syncLatestCheckbox(){
+  const verInput = document.getElementById('new-mod-version');
+  const latestBox = document.getElementById('new-mod-latest');
+  const isLatest = verInput.value.trim() === '';
+  latestBox.checked = isLatest;
+  verInput.style.opacity = '1';
+  const lbl = document.getElementById('latest-label-text');
+  if(lbl) { lbl.style.color = isLatest ? 'var(--success)' : 'var(--text-dim)'; }
+}
 
 function addMod(){
   const id=document.getElementById('new-mod-id').value.trim();
   const name=document.getElementById('new-mod-name').value.trim();
-  const version=document.getElementById('new-mod-version').value.trim();
+  const latest=document.getElementById('new-mod-latest').checked;
+  const version=latest ? null : document.getElementById('new-mod-version').value.trim() || null;
   const required=document.getElementById('new-mod-required').checked;
   if(!id||!name){ toast('Mod ID and Name required','danger'); return; }
-  makeBackup(); mods.push({modId:id,name,version:version||'1.0.0',required}); renderMods();
-  document.getElementById('new-mod-id').value=''; document.getElementById('new-mod-name').value=''; document.getElementById('new-mod-version').value='';
+  makeBackup();
+  const mod = {modId:id, name, required};
+  if(version) mod.version = version;
+  mods.push(mod);
+  renderMods();
+  document.getElementById('new-mod-id').value='';
+  document.getElementById('new-mod-name').value='';
+  document.getElementById('new-mod-version').value='';
+  document.getElementById('new-mod-latest').checked = true;
+  syncVersionInput();
   document.getElementById('add-mod-panel').classList.remove('open');
-  toast('Mod "'+name+'" added','success');
+  toast('Mod "'+name+'" added' + (version ? ' (pinned v'+version+')' : ' (always latest)'), 'success');
 }
 
 function dragStart(e,idx){ dragSrc=idx; e.currentTarget.classList.add('dragging'); }
@@ -1320,7 +1430,7 @@ function toggleChip(el){ el.classList.toggle('selected'); }
 // ─── IMPORT / EXPORT MODS ────────────────────────────────────────────────────
 function exportModList(){
   if(!mods.length){ toast('No mods','danger'); return; }
-  const blob=new Blob([mods.map(m=>`${m.name} - v${m.version}`).join('\n')],{type:'text/plain'});
+  const blob=new Blob([mods.map(m=>`${m.name} - ${m.version ? 'v'+m.version : 'LATEST'}`).join('\n')],{type:'text/plain'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=(currentFile||'server').replace(/\.json$/i,'')+'_mods.txt'; a.click(); URL.revokeObjectURL(a.href);
   toast('Mod list exported','success');
@@ -1538,6 +1648,13 @@ const SCENARIOS = [
   { name:"Showcase — Helicopters", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_Helicopters.conf", map:"Everon", modes:["coop"], tags:["coop","official","showcase"], desc:"Helicopter showcase mission highlighting aircraft gameplay mechanics." },
   { name:"Showcase — Vehicles", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_Vehicles.conf", map:"Everon", modes:["coop"], tags:["coop","official","showcase"], desc:"Vehicle showcase demonstrating ground vehicle mechanics and combined arms." },
   { name:"Showcase — Arsenal", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_Arsenal.conf", map:"Everon", modes:["sandbox"], tags:["sandbox","official","showcase"], desc:"Arsenal showcase — access all weapons and gear for testing." },
+  // ── Kolguyev (added in v1.6) ──
+  { name:"Conflict — Kolguyev", id:"{C700DB2C8C7B9244}Missions/23_Campaign.conf", map:"Kolguyev", modes:["pvp"], tags:["pvp","official","v1.6"], desc:"Conflict on the new Kolguyev island added in v1.6. Volcanic terrain with rivers and Soviet naval infantry presence." },
+  { name:"Combined Arms — Kolguyev", id:"{C700DB2C8C7B9244}Missions/24_CombinedArms.conf", map:"Kolguyev", modes:["coop"], tags:["coop","official","v1.6"], desc:"Combined Arms PvE co-op on Kolguyev — new terrain with unique tactical challenges." },
+  { name:"Game Master — Kolguyev", id:"{C700DB2C8C7B9244}Missions/21_GM_Eden.conf", map:"Kolguyev", modes:["sandbox","gamemaster"], tags:["sandbox","gamemaster","official","v1.6"], desc:"Game Master sandbox on Kolguyev, the volcanic island added in v1.6." },
+  { name:"Combat Ops — Kolguyev", id:"{C700DB2C8C7B9244}Missions/22_Showcase_CombatOps.conf", map:"Kolguyev", modes:["coop"], tags:["coop","official","v1.6"], desc:"Combat Ops scenario on Kolguyev. New co-op content added with the 1.6 update." },
+  { name:"Operation Omega — Kolguyev", id:"{C700DB2C8C7B9244}Missions/99_OperationOmega.conf", map:"Kolguyev", modes:["coop"], tags:["coop","official","campaign","v1.6"], desc:"Single-player/co-op campaign added in v1.6. Story-driven operations on Kolguyev." },
+  { name:"Air Support Showcase", id:"{ECC61978EDCC2B5A}Missions/22_Showcase_AirSupport.conf", map:"Everon", modes:["coop"], tags:["coop","official","showcase","v1.6"], desc:"Air support showcase scenario added in v1.6 demonstrating CAS and aviation mechanics." },
 ];
 
 let scenarioCatFilter = 'all';
@@ -1857,10 +1974,10 @@ function importFromUrl() {
 
   const known = WORKSHOP_MODS.find(m => m.modId === modId);
   const name = known ? known.name : 'Mod ' + modId;
-  const version = known ? known.version : '1.0.0';
+  const version = known ? known.version : null;
 
   makeBackup();
-  mods.push({ modId, name, version, required: true });
+  const urlMod = {modId, name, required:true}; if(version) urlMod.version=version; mods.push(urlMod);
   renderMods();
   renderWorkshop();
   updateWkInListCount();
@@ -1927,7 +2044,7 @@ function processIngameExport(parsed, sourceName) {
   importedMods = importedMods.map(m => ({
     modId: (m.modId || m.id || m.ModId || m.ID || '').toUpperCase(),
     name: m.name || m.Name || m.modId || 'Unknown',
-    version: m.version || m.Version || '1.0.0',
+    version: m.version || m.Version || null,
     required: m.required !== false
   })).filter(m => /^[0-9A-Fa-f]{16}$/i.test(m.modId));
 
@@ -2185,7 +2302,7 @@ function renderWorkshop() {
 function addWorkshopMod(modId, name, version) {
   if(mods.find(m => m.modId === modId)) { toast('Already in config', 'danger'); return; }
   makeBackup();
-  mods.push({ modId, name, version, required: true });
+  const urlMod = {modId, name, required:true}; if(version) urlMod.version=version; mods.push(urlMod);
   renderWorkshop();
   renderMods();
   toast('"' + name + '" added to config', 'success');
@@ -2416,7 +2533,7 @@ function mergeFieldToActive(key, val) {
     'game.gameProperties.networkViewDistance':'propNetViewDist',
     'game.gameProperties.serverMinGrassDistance':'propGrassDist',
     'operating.joinQueue.maxSize':'opJoinQueue',
-    'operating.aiLimit':'opAILimit','operating.playerSaveTime':'opPlayerSaveTime',
+    'operating.AILimit':'opAILimit','operating.aiLimit':'opAILimit','operating.playerSaveTime':'opPlayerSaveTime',
   };
   const formId = fieldMap[key];
   if(formId) {
